@@ -16,15 +16,8 @@ interface Partner {
   service_type: string | null;
 }
 
-interface ServiceType {
-  id: string;
-  name: string;
-  display_order: number;
-}
-
 const OrdersRequest = () => {
   const [partners, setPartners] = useState<Partner[]>([]);
-  const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
   const [selectedPartner, setSelectedPartner] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -37,23 +30,7 @@ const OrdersRequest = () => {
 
   useEffect(() => {
     fetchPartners();
-    fetchServiceTypes();
   }, []);
-
-  const fetchServiceTypes = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("service_types")
-        .select("id, name, display_order")
-        .eq("is_active", true)
-        .order("display_order");
-
-      if (error) throw error;
-      setServiceTypes(data || []);
-    } catch (error: any) {
-      toast.error("서비스 종류를 불러오는데 실패했습니다.");
-    }
-  };
 
   const fetchPartners = async () => {
     try {
@@ -198,11 +175,12 @@ const OrdersRequest = () => {
                       <SelectValue placeholder={selectedPartner ? "자동 선택됨" : "먼저 제휴업체를 선택하세요"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {serviceTypes.map((type) => (
-                        <SelectItem key={type.id} value={type.name}>
-                          {type.name}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="케이터링">케이터링</SelectItem>
+                      <SelectItem value="뷔페서비스">뷔페서비스</SelectItem>
+                      <SelectItem value="청소서비스">청소서비스</SelectItem>
+                      <SelectItem value="MC">MC</SelectItem>
+                      <SelectItem value="사진촬영">사진촬영</SelectItem>
+                      <SelectItem value="파티룸">파티룸</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
