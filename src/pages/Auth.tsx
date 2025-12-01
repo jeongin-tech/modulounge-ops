@@ -39,6 +39,7 @@ const Auth = () => {
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
   const [fullName, setFullName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [phone, setPhone] = useState("");
@@ -78,6 +79,13 @@ const Auth = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // 비밀번호 확인 검증
+    if (mode === "signup" && password !== passwordConfirm) {
+      toast.error("비밀번호가 일치하지 않습니다.");
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -325,6 +333,23 @@ const Auth = () => {
                 required
               />
             </div>
+
+            {mode === "signup" && (
+              <div className="space-y-2">
+                <Label htmlFor="passwordConfirm">비밀번호 확인</Label>
+                <Input
+                  id="passwordConfirm"
+                  type="password"
+                  placeholder="비밀번호를 다시 입력하세요"
+                  value={passwordConfirm}
+                  onChange={(e) => setPasswordConfirm(e.target.value)}
+                  required
+                />
+                {passwordConfirm && password !== passwordConfirm && (
+                  <p className="text-sm text-destructive">비밀번호가 일치하지 않습니다</p>
+                )}
+              </div>
+            )}
 
             <Button 
               type="submit" 
