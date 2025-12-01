@@ -18,6 +18,13 @@ interface Event {
   end_time: string;
   location: string | null;
   created_by: string;
+  is_all_day: boolean;
+  color: string;
+  recurrence_rule: string | null;
+  recurrence_end_date: string | null;
+  visibility: string;
+  reminders: any[];
+  meeting_url: string | null;
   profiles?: {
     full_name: string;
   };
@@ -168,11 +175,15 @@ const CalendarView = () => {
                     >
                       <span className="text-sm mb-1">{date.getDate()}</span>
                       {dayEvents.length > 0 && (
-                        <div className="flex flex-wrap gap-1 w-full">
+                        <div className="flex flex-col gap-1 w-full">
                           {dayEvents.slice(0, 2).map((event) => (
                             <div
                               key={event.id}
-                              className="text-xs px-1.5 py-0.5 rounded bg-primary/20 truncate w-full"
+                              className="text-xs px-1.5 py-0.5 rounded truncate w-full"
+                              style={{ 
+                                backgroundColor: event.color + '40',
+                                borderLeft: `3px solid ${event.color}`
+                              }}
                               title={event.title}
                             >
                               {event.title}
@@ -208,6 +219,7 @@ const CalendarView = () => {
                     key={event.id}
                     className="p-3 border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
                     onClick={() => handleEditEvent(event)}
+                    style={{ borderLeftWidth: "3px", borderLeftColor: event.color }}
                   >
                     <div className="flex items-start justify-between mb-1">
                       <p className="font-semibold text-sm line-clamp-1">{event.title}</p>
@@ -216,10 +228,13 @@ const CalendarView = () => {
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(event.start_time).toLocaleTimeString("ko-KR", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {event.is_all_day 
+                        ? "종일" 
+                        : new Date(event.start_time).toLocaleTimeString("ko-KR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                      }
                     </p>
                   </div>
                 ))}
