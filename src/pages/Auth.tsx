@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,12 @@ import logo from "@/assets/logo.jpg";
 type AuthMode = "login" | "signup";
 type UserRole = "STAFF" | "PARTNER";
 
+interface ServiceType {
+  id: string;
+  name: string;
+  display_order: number;
+}
+
 const Auth = () => {
   const navigate = useNavigate();
   const [mode, setMode] = useState<AuthMode>("login");
@@ -23,7 +29,29 @@ const Auth = () => {
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState<UserRole>("PARTNER");
   const [serviceType, setServiceType] = useState("");
+  const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (mode === "signup" && role === "PARTNER") {
+      fetchServiceTypes();
+    }
+  }, [mode, role]);
+
+  const fetchServiceTypes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("service_types")
+        .select("id, name, display_order")
+        .eq("is_active", true)
+        .order("display_order");
+
+      if (error) throw error;
+      setServiceTypes(data || []);
+    } catch (error: any) {
+      toast.error("서비스 종류를 불러오는데 실패했습니다.");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,12 +158,11 @@ const Auth = () => {
                           <SelectValue placeholder="서비스 종류를 선택하세요" />
                         </SelectTrigger>
                         <SelectContent className="bg-background">
-                          <SelectItem value="케이터링">케이터링</SelectItem>
-                          <SelectItem value="뷔페서비스">뷔페서비스</SelectItem>
-                          <SelectItem value="청소서비스">청소서비스</SelectItem>
-                          <SelectItem value="MC">MC</SelectItem>
-                          <SelectItem value="사진촬영">사진촬영</SelectItem>
-                          <SelectItem value="파티룸">파티룸</SelectItem>
+                          {serviceTypes.map((type) => (
+                            <SelectItem key={type.id} value={type.name}>
+                              {type.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
