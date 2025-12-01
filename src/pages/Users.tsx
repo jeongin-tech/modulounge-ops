@@ -273,21 +273,30 @@ const Users = () => {
     if (!editingSlackUser) return;
 
     try {
-      const { error } = await supabase
+      console.log("Saving slack data:", slackFormData, "for user:", editingSlackUser.id);
+      
+      const { data, error } = await supabase
         .from("profiles")
         .update({
           slack_webhook_url: slackFormData.slack_webhook_url || null,
           slack_channel_id: slackFormData.slack_channel_id || null,
         })
-        .eq("id", editingSlackUser.id);
+        .eq("id", editingSlackUser.id)
+        .select();
 
-      if (error) throw error;
+      console.log("Update result:", { data, error });
+
+      if (error) {
+        console.error("Slack update error:", error);
+        throw error;
+      }
       
       toast.success("Slack 연동 정보가 저장되었습니다.");
       setSlackDialogOpen(false);
-      fetchUsers();
+      await fetchUsers();
     } catch (error: any) {
-      toast.error("저장에 실패했습니다.");
+      console.error("Slack save failed:", error);
+      toast.error(error.message || "저장에 실패했습니다.");
     }
   };
 
