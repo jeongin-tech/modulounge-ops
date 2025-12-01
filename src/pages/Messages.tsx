@@ -94,8 +94,10 @@ const Messages = () => {
       return;
     }
 
-    // Fetch sender and receiver profiles separately to bypass RLS
-    const senderIds = [...new Set(messagesData?.map(m => m.sender_id).filter(Boolean))];
+    // For messages with sender info stored directly, use that
+    // For messages without, try to fetch from profiles
+    const messagesWithoutSender = messagesData?.filter(m => !m.sender_name && m.sender_id) || [];
+    const senderIds = [...new Set(messagesWithoutSender.map(m => m.sender_id))];
     const receiverIds = [...new Set(messagesData?.map(m => m.receiver_id).filter(Boolean))];
     
     const { data: profiles } = await supabase
@@ -103,17 +105,31 @@ const Messages = () => {
       .select('id, full_name, email, company_name, role')
       .in('id', [...senderIds, ...receiverIds]);
 
-    // Map profiles to messages
     const profilesMap = new Map(profiles?.map(p => [p.id, p]));
     
-    const enrichedMessages = messagesData?.map(msg => ({
-      ...msg,
-      sender: msg.sender_id ? profilesMap.get(msg.sender_id) : null,
-      receiver: msg.receiver_id ? profilesMap.get(msg.receiver_id) : null,
-    })) || [];
+    const enrichedMessages = messagesData?.map(msg => {
+      // If message has sender info stored, use it
+      if (msg.sender_name) {
+        return {
+          ...msg,
+          sender: {
+            full_name: msg.sender_name,
+            email: msg.sender_email || '',
+            company_name: null,
+            role: msg.sender_role || 'STAFF',
+          },
+          receiver: msg.receiver_id ? profilesMap.get(msg.receiver_id) : null,
+        };
+      }
+      // Otherwise try to get from profiles
+      return {
+        ...msg,
+        sender: msg.sender_id ? profilesMap.get(msg.sender_id) : null,
+        receiver: msg.receiver_id ? profilesMap.get(msg.receiver_id) : null,
+      };
+    }) || [];
 
     console.log('📩 Fetched messages:', enrichedMessages);
-    console.log('📩 First message sender:', enrichedMessages[0]?.sender);
     setMessages(enrichedMessages as any);
   };
 
