@@ -13,6 +13,7 @@ import CalendarView from "./pages/CalendarView";
 import Settlements from "./pages/Settlements";
 import SettlementsManage from "./pages/SettlementsManage";
 import Partners from "./pages/Partners";
+import Users from "./pages/Users";
 import Messages from "./pages/Messages";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/settlements" element={<Settlements />} />
           <Route path="/settlements/manage" element={<SettlementsManage />} />
           <Route path="/partners" element={<Partners />} />
+          <Route path="/users" element={<Users />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
