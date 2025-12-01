@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { ArrowLeft } from "lucide-react";
 import logo from "@/assets/logo.jpg";
 
 type AuthMode = "login" | "signup";
@@ -131,7 +132,15 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-primary p-4">
       <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="space-y-4 text-center">
+        <CardHeader className="space-y-4 text-center relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/")}
+            className="absolute left-2 top-2"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
           <div className="flex justify-center">
             <img src={logo} alt="모드라운지 로고" className="h-16 w-16 rounded-full" />
           </div>
