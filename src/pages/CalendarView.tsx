@@ -4,6 +4,8 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { EventDialog } from "@/components/EventDialog";
@@ -24,7 +26,6 @@ interface Event {
   recurrence_end_date: string | null;
   visibility: string;
   reminders: any[];
-  meeting_url: string | null;
   profiles?: {
     full_name: string;
   };
@@ -37,10 +38,26 @@ const CalendarView = () => {
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
   const [dayEventsDialogOpen, setDayEventsDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [eventTypes, setEventTypes] = useState<string[]>(["공간대관"]);
+  const [selectedEventTypes, setSelectedEventTypes] = useState<Set<string>>(new Set(["공간대관"]));
 
   useEffect(() => {
+    fetchEventTypes();
     fetchEvents();
   }, []);
+
+  const fetchEventTypes = async () => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("service_type")
+      .not("service_type", "is", null);
+    
+    if (data) {
+      const types = ["공간대관", ...new Set(data.map(p => p.service_type).filter(Boolean))];
+      setEventTypes(types as string[]);
+      setSelectedEventTypes(new Set(types as string[]));
+    }
+  };
 
   const fetchEvents = async () => {
     try {
@@ -69,9 +86,20 @@ const CalendarView = () => {
       return (
         eventDate.getFullYear() === date.getFullYear() &&
         eventDate.getMonth() === date.getMonth() &&
-        eventDate.getDate() === date.getDate()
+        eventDate.getDate() === date.getDate() &&
+        selectedEventTypes.has(event.event_type)
       );
     });
+  };
+
+  const toggleEventType = (type: string) => {
+    const newSelected = new Set(selectedEventTypes);
+    if (newSelected.has(type)) {
+      newSelected.delete(type);
+    } else {
+      newSelected.add(type);
+    }
+    setSelectedEventTypes(newSelected);
   };
 
   const selectedDateEvents = selectedDate ? getEventsForDate(selectedDate) : [];
@@ -127,7 +155,29 @@ const CalendarView = () => {
           </Button>
         </div>
 
-        <div className="grid lg:grid-cols-[1fr_300px] gap-6">
+        <div className="grid lg:grid-cols-[250px_1fr_300px] gap-6">
+          {/* Event Type Filter Sidebar */}
+          <div className="bg-card rounded-lg border p-6">
+            <h3 className="font-semibold mb-4 text-lg">일정 종류</h3>
+            <div className="space-y-2">
+              {eventTypes.map((type) => (
+                <div key={type} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`type-${type}`}
+                    checked={selectedEventTypes.has(type)}
+                    onCheckedChange={() => toggleEventType(type)}
+                  />
+                  <Label 
+                    htmlFor={`type-${type}`} 
+                    className="cursor-pointer text-sm"
+                  >
+                    {type}
+                  </Label>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Main Calendar */}
           <div className="bg-card rounded-lg border p-6">
             <Calendar
