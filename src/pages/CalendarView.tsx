@@ -1,59 +1,54 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { Plus } from "lucide-react";
+import { EventDialog } from "@/components/EventDialog";
+import { DayEventsDialog } from "@/components/DayEventsDialog";
 
-interface Order {
+interface Event {
   id: string;
-  order_number: string;
-  customer_name: string;
-  service_type: string;
-  service_date: string;
-  service_location: string;
-  status: string;
+  title: string;
+  description: string | null;
+  event_type: string;
+  start_time: string;
+  end_time: string;
+  location: string | null;
+  created_by: string;
+  profiles?: {
+    full_name: string;
+  };
 }
 
 const CalendarView = () => {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [loading, setLoading] = useState(true);
-  const [userRole, setUserRole] = useState<"STAFF" | "PARTNER" | null>(null);
+  const [eventDialogOpen, setEventDialogOpen] = useState(false);
+  const [dayEventsDialogOpen, setDayEventsDialogOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
   useEffect(() => {
-    fetchUserRoleAndOrders();
+    fetchEvents();
   }, []);
 
-  const fetchUserRoleAndOrders = async () => {
+  const fetchEvents = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const { data, error } = await supabase
+        .from("calendar_events")
+        .select(`
+          *,
+          profiles!calendar_events_created_by_fkey (
+            full_name
+          )
+        `)
+        .order("start_time", { ascending: true });
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-
-      if (profile) {
-        setUserRole(profile.role as "STAFF" | "PARTNER");
-
-        let query = supabase
-          .from("orders")
-          .select("*")
-          .order("service_date", { ascending: true });
-
-        if (profile.role === "PARTNER") {
-          query = query.eq("partner_id", user.id);
-        }
-
-        const { data, error } = await query;
-
-        if (error) throw error;
-        setOrders(data || []);
-      }
+      if (error) throw error;
+      setEvents(data as any || []);
     } catch (error: any) {
       toast.error("일정을 불러오는데 실패했습니다.");
     } finally {
@@ -61,20 +56,41 @@ const CalendarView = () => {
     }
   };
 
-  const getOrdersForDate = (date: Date) => {
-    return orders.filter((order) => {
-      const orderDate = new Date(order.service_date);
+  const getEventsForDate = (date: Date) => {
+    return events.filter((event) => {
+      const eventDate = new Date(event.start_time);
       return (
-        orderDate.getFullYear() === date.getFullYear() &&
-        orderDate.getMonth() === date.getMonth() &&
-        orderDate.getDate() === date.getDate()
+        eventDate.getFullYear() === date.getFullYear() &&
+        eventDate.getMonth() === date.getMonth() &&
+        eventDate.getDate() === date.getDate()
       );
     });
   };
 
-  const selectedDateOrders = selectedDate ? getOrdersForDate(selectedDate) : [];
+  const selectedDateEvents = selectedDate ? getEventsForDate(selectedDate) : [];
+  const datesWithEvents = events.map((event) => new Date(event.start_time));
 
-  const datesWithOrders = orders.map((order) => new Date(order.service_date));
+  const handleDateClick = (date: Date | undefined) => {
+    if (date) {
+      setSelectedDate(date);
+      setDayEventsDialogOpen(true);
+    }
+  };
+
+  const handleAddEvent = () => {
+    setSelectedEvent(null);
+    setEventDialogOpen(true);
+  };
+
+  const handleEditEvent = (event: Event) => {
+    setSelectedEvent(event);
+    setDayEventsDialogOpen(false);
+    setEventDialogOpen(true);
+  };
+
+  const handleEventSaved = () => {
+    fetchEvents();
+  };
 
   if (loading) {
     return (
@@ -89,105 +105,147 @@ const CalendarView = () => {
   return (
     <DashboardLayout currentPage="/calendar">
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            일정 보기
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            {userRole === "STAFF" ? "전체 오더 일정을 확인하세요" : "나의 오더 일정을 확인하세요"}
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              일정 관리
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              팀의 모든 일정을 확인하고 관리하세요
+            </p>
+          </div>
+          <Button onClick={handleAddEvent} size="lg" className="gap-2">
+            <Plus className="h-5 w-5" />
+            일정 추가
+          </Button>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
-          <Card>
-            <CardContent className="p-6">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                className="rounded-md border w-full"
-                modifiers={{
-                  hasOrder: datesWithOrders,
-                }}
-                modifiersClassNames={{
-                  hasOrder: "bg-primary/10 font-bold",
-                }}
-              />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="font-semibold mb-4">
-                {selectedDate?.toLocaleDateString("ko-KR", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-                의 일정
-              </h3>
-
-              {selectedDateOrders.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <p>해당 날짜에 일정이 없습니다.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {selectedDateOrders.map((order) => (
-                    <div
-                      key={order.id}
-                      className="p-4 border rounded-lg hover:shadow-md transition-shadow"
+        <div className="grid lg:grid-cols-[1fr_300px] gap-6">
+          {/* Main Calendar */}
+          <div className="bg-card rounded-lg border p-6">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={handleDateClick}
+              className="w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-cell]:p-2"
+              classNames={{
+                months: "flex flex-col space-y-4 w-full",
+                month: "space-y-4 w-full",
+                caption: "flex justify-center pt-1 relative items-center mb-4",
+                caption_label: "text-lg font-semibold",
+                nav: "space-x-1 flex items-center",
+                nav_button: "h-8 w-8 bg-transparent hover:bg-accent rounded-md",
+                table: "w-full border-collapse",
+                head_row: "flex w-full",
+                head_cell: "text-muted-foreground w-full font-medium text-sm p-2",
+                row: "flex w-full mt-2",
+                cell: "w-full text-center text-sm p-0 relative h-24 focus-within:relative focus-within:z-20",
+                day: "h-full w-full p-2 font-normal hover:bg-accent rounded-md flex flex-col items-start justify-start",
+                day_selected: "bg-primary text-primary-foreground hover:bg-primary/90",
+                day_today: "bg-accent font-bold",
+                day_outside: "text-muted-foreground opacity-50",
+              }}
+              modifiers={{
+                hasEvents: datesWithEvents,
+              }}
+              modifiersClassNames={{
+                hasEvents: "font-bold",
+              }}
+              components={{
+                Day: ({ date, ...props }) => {
+                  const dayEvents = getEventsForDate(date);
+                  const isSelected = selectedDate && 
+                    date.getDate() === selectedDate.getDate() &&
+                    date.getMonth() === selectedDate.getMonth() &&
+                    date.getFullYear() === selectedDate.getFullYear();
+                  
+                  return (
+                    <div 
+                      className={`h-full w-full p-2 rounded-md hover:bg-accent cursor-pointer flex flex-col items-start justify-start ${
+                        isSelected ? 'bg-primary text-primary-foreground hover:bg-primary/90' : ''
+                      }`}
+                      onClick={() => handleDateClick(date)}
                     >
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <p className="font-semibold">{order.order_number}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(order.service_date).toLocaleTimeString("ko-KR", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </p>
+                      <span className="text-sm mb-1">{date.getDate()}</span>
+                      {dayEvents.length > 0 && (
+                        <div className="flex flex-wrap gap-1 w-full">
+                          {dayEvents.slice(0, 2).map((event) => (
+                            <div
+                              key={event.id}
+                              className="text-xs px-1.5 py-0.5 rounded bg-primary/20 truncate w-full"
+                              title={event.title}
+                            >
+                              {event.title}
+                            </div>
+                          ))}
+                          {dayEvents.length > 2 && (
+                            <div className="text-xs text-muted-foreground">
+                              +{dayEvents.length - 2}개 더
+                            </div>
+                          )}
                         </div>
-                        <Badge variant="secondary">{order.service_type}</Badge>
-                      </div>
-                      <div className="text-sm space-y-1">
-                        <p>
-                          <span className="font-medium">고객:</span> {order.customer_name}
-                        </p>
-                        <p>
-                          <span className="font-medium">장소:</span> {order.service_location}
-                        </p>
-                        <Badge className="mt-2">
-                          {order.status === "requested" && "요청됨"}
-                          {order.status === "accepted" && "수락됨"}
-                          {order.status === "confirmed" && "확정됨"}
-                          {order.status === "completed" && "완료"}
-                          {order.status === "settled" && "정산완료"}
-                          {order.status === "cancelled" && "취소"}
-                        </Badge>
-                      </div>
+                      )}
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                  );
+                },
+              }}
+            />
+          </div>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold mb-1">구글 캘린더 연동</h3>
-                <p className="text-sm text-muted-foreground">
-                  일정을 구글 캘린더와 동기화하세요
-                </p>
+          {/* Sidebar - Today's Events */}
+          <div className="bg-card rounded-lg border p-6">
+            <h3 className="font-semibold mb-4 text-lg">
+              오늘의 일정
+            </h3>
+            {selectedDateEvents.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>일정이 없습니다</p>
               </div>
-              <Badge variant="outline">준비중</Badge>
-            </div>
-          </CardContent>
-        </Card>
+            ) : (
+              <div className="space-y-3">
+                {selectedDateEvents.map((event) => (
+                  <div
+                    key={event.id}
+                    className="p-3 border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => handleEditEvent(event)}
+                  >
+                    <div className="flex items-start justify-between mb-1">
+                      <p className="font-semibold text-sm line-clamp-1">{event.title}</p>
+                      <Badge variant="secondary" className="text-xs ml-2 shrink-0">
+                        {event.event_type}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(event.start_time).toLocaleTimeString("ko-KR", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* Event Dialog */}
+      <EventDialog
+        open={eventDialogOpen}
+        onOpenChange={setEventDialogOpen}
+        event={selectedEvent}
+        selectedDate={selectedDate}
+        onEventSaved={handleEventSaved}
+      />
+
+      {/* Day Events Dialog */}
+      <DayEventsDialog
+        open={dayEventsDialogOpen}
+        onOpenChange={setDayEventsDialogOpen}
+        selectedDate={selectedDate || null}
+        events={selectedDateEvents}
+        onEditEvent={handleEditEvent}
+      />
     </DashboardLayout>
   );
 };
