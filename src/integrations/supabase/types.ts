@@ -14,42 +14,111 @@ export type Database = {
   }
   public: {
     Tables: {
+      calendar_event_attendees: {
+        Row: {
+          created_at: string
+          email: string | null
+          event_id: string
+          id: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          event_id: string
+          id?: string
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          event_id?: string
+          id?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_event_attendees_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_event_attendees_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calendar_events: {
         Row: {
+          attachments: Json | null
+          attendees: Json | null
+          color: string | null
           created_at: string
           created_by: string
           description: string | null
           end_time: string
           event_type: string
           id: string
+          is_all_day: boolean
           location: string | null
+          meeting_url: string | null
+          recurrence_end_date: string | null
+          recurrence_rule: string | null
+          reminders: Json | null
           start_time: string
           title: string
           updated_at: string
+          visibility: string | null
         }
         Insert: {
+          attachments?: Json | null
+          attendees?: Json | null
+          color?: string | null
           created_at?: string
           created_by: string
           description?: string | null
           end_time: string
           event_type: string
           id?: string
+          is_all_day?: boolean
           location?: string | null
+          meeting_url?: string | null
+          recurrence_end_date?: string | null
+          recurrence_rule?: string | null
+          reminders?: Json | null
           start_time: string
           title: string
           updated_at?: string
+          visibility?: string | null
         }
         Update: {
+          attachments?: Json | null
+          attendees?: Json | null
+          color?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
           end_time?: string
           event_type?: string
           id?: string
+          is_all_day?: boolean
           location?: string | null
+          meeting_url?: string | null
+          recurrence_end_date?: string | null
+          recurrence_rule?: string | null
+          reminders?: Json | null
           start_time?: string
           title?: string
           updated_at?: string
+          visibility?: string | null
         }
         Relationships: [
           {

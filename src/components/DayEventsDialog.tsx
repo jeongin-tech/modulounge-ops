@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
-import { Clock, MapPin, User } from "lucide-react";
+import { Clock, MapPin, User, Video, Repeat } from "lucide-react";
 
 interface Event {
   id: string;
@@ -14,6 +14,13 @@ interface Event {
   end_time: string;
   location: string | null;
   created_by: string;
+  is_all_day: boolean;
+  color: string;
+  recurrence_rule: string | null;
+  recurrence_end_date: string | null;
+  visibility: string;
+  reminders: any[];
+  meeting_url: string | null;
   profiles?: {
     full_name: string;
   };
@@ -58,15 +65,27 @@ export const DayEventsDialog = ({ open, onOpenChange, selectedDate, events, onEd
                 key={event.id}
                 className="p-4 border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
                 onClick={() => onEditEvent(event)}
+                style={{ borderLeftWidth: "4px", borderLeftColor: event.color }}
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
                     <h4 className="font-semibold text-lg">{event.title}</h4>
-                    <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                      <Clock className="h-4 w-4" />
-                      <span>
-                        {format(new Date(event.start_time), "HH:mm")} - {format(new Date(event.end_time), "HH:mm")}
-                      </span>
+                    <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground flex-wrap">
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        <span>
+                          {event.is_all_day 
+                            ? "종일" 
+                            : `${format(new Date(event.start_time), "HH:mm")} - ${format(new Date(event.end_time), "HH:mm")}`
+                          }
+                        </span>
+                      </div>
+                      {event.recurrence_rule && (
+                        <div className="flex items-center gap-1">
+                          <Repeat className="h-4 w-4" />
+                          <span>{event.recurrence_rule}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <Badge variant="secondary">
@@ -78,6 +97,21 @@ export const DayEventsDialog = ({ open, onOpenChange, selectedDate, events, onEd
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                     <MapPin className="h-4 w-4" />
                     <span>{event.location}</span>
+                  </div>
+                )}
+
+                {event.meeting_url && (
+                  <div className="flex items-center gap-2 text-sm mb-2">
+                    <Video className="h-4 w-4 text-primary" />
+                    <a 
+                      href={event.meeting_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      화상 회의 참여
+                    </a>
                   </div>
                 )}
 
