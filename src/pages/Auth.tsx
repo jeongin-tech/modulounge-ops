@@ -323,7 +323,7 @@ const Auth = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">비밀번호</Label>
+              <Label htmlFor="password">비밀번호 (영문, 숫자 포함 6글자 이상)</Label>
               <Input
                 id="password"
                 type="password"
@@ -331,6 +331,7 @@ const Auth = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={6}
               />
             </div>
 
@@ -344,6 +345,7 @@ const Auth = () => {
                   value={passwordConfirm}
                   onChange={(e) => setPasswordConfirm(e.target.value)}
                   required
+                  minLength={6}
                 />
                 {passwordConfirm && password !== passwordConfirm && (
                   <p className="text-sm text-destructive">비밀번호가 일치하지 않습니다</p>
