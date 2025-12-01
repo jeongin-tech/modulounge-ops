@@ -1,1 +1,10 @@
 project_id = "hunwnggzidopjhovvika"
+
+[functions.send-to-slack]
+verify_jwt = false
+
+[functions.slack-events]
+verify_jwt = false
+
+[functions.reset-password]
+verify_jwt = false
