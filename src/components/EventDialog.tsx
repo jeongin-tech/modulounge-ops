@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { X, Plus, Bell, Video, User } from "lucide-react";
+import { X, Plus, Bell, User } from "lucide-react";
 
 interface Event {
   id: string;
@@ -28,7 +28,6 @@ interface Event {
   recurrence_end_date: string | null;
   visibility: string;
   reminders: any[];
-  meeting_url: string | null;
   profiles?: {
     full_name: string;
   };
@@ -42,13 +41,6 @@ interface EventDialogProps {
   onEventSaved: () => void;
 }
 
-const EVENT_TYPES = [
-  { value: "meeting", label: "회의" },
-  { value: "service", label: "서비스" },
-  { value: "delivery", label: "배송" },
-  { value: "consultation", label: "상담" },
-  { value: "other", label: "기타" },
-];
 
 const COLORS = [
   { value: "#3b82f6", label: "파란색" },
@@ -94,19 +86,25 @@ export const EventDialog = ({ open, onOpenChange, event, selectedDate, onEventSa
   const [recurrence, setRecurrence] = useState("none");
   const [visibility, setVisibility] = useState("default");
   const [reminders, setReminders] = useState<string[]>(["10"]);
-  const [meetingUrl, setMeetingUrl] = useState("");
   const [attendeeEmail, setAttendeeEmail] = useState("");
   const [attendees, setAttendees] = useState<Array<{ email: string; user_id?: string }>>([]);
   const [loading, setLoading] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [serviceTypes, setServiceTypes] = useState<string[]>(["공간대관"]);
 
   useEffect(() => {
-    getCurrentUser();
+    fetchServiceTypes();
   }, []);
 
-  const getCurrentUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) setCurrentUserId(user.id);
+  const fetchServiceTypes = async () => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("service_type")
+      .not("service_type", "is", null);
+    
+    if (data) {
+      const types = ["공간대관", ...new Set(data.map(p => p.service_type).filter(Boolean))];
+      setServiceTypes(types as string[]);
+    }
   };
 
   useEffect(() => {
@@ -119,7 +117,6 @@ export const EventDialog = ({ open, onOpenChange, event, selectedDate, onEventSa
       setRecurrence(event.recurrence_rule || "none");
       setVisibility(event.visibility);
       setReminders(event.reminders || ["10"]);
-      setMeetingUrl(event.meeting_url || "");
       setLocation(event.location || "");
       
       if (event.is_all_day) {
@@ -137,13 +134,12 @@ export const EventDialog = ({ open, onOpenChange, event, selectedDate, onEventSa
       setEndTime(`${dateStr}T10:00`);
       setTitle("");
       setDescription("");
-      setEventType("meeting");
+      setEventType("공간대관");
       setIsAllDay(false);
       setColor("#3b82f6");
       setRecurrence("none");
       setVisibility("default");
       setReminders(["10"]);
-      setMeetingUrl("");
       setLocation("");
       setAttendees([]);
     }
@@ -216,7 +212,6 @@ export const EventDialog = ({ open, onOpenChange, event, selectedDate, onEventSa
         recurrence_rule: recurrence === "none" ? null : recurrence,
         visibility,
         reminders,
-        meeting_url: meetingUrl || null,
         created_by: user.id,
       };
 
@@ -376,9 +371,9 @@ export const EventDialog = ({ open, onOpenChange, event, selectedDate, onEventSa
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {EVENT_TYPES.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
+                    {serviceTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -392,21 +387,6 @@ export const EventDialog = ({ open, onOpenChange, event, selectedDate, onEventSa
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder="장소"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="meeting-url">
-                  <div className="flex items-center gap-2">
-                    <Video className="h-4 w-4" />
-                    화상 회의 링크
-                  </div>
-                </Label>
-                <Input
-                  id="meeting-url"
-                  value={meetingUrl}
-                  onChange={(e) => setMeetingUrl(e.target.value)}
-                  placeholder="https://meet.google.com/..."
                 />
               </div>
 

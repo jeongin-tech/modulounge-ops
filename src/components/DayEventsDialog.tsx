@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
-import { Clock, MapPin, User, Video, Repeat } from "lucide-react";
+import { Clock, MapPin, User, Repeat } from "lucide-react";
 
 interface Event {
   id: string;
@@ -20,7 +20,6 @@ interface Event {
   recurrence_end_date: string | null;
   visibility: string;
   reminders: any[];
-  meeting_url: string | null;
   profiles?: {
     full_name: string;
   };
@@ -97,21 +96,6 @@ export const DayEventsDialog = ({ open, onOpenChange, selectedDate, events, onEd
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                     <MapPin className="h-4 w-4" />
                     <span>{event.location}</span>
-                  </div>
-                )}
-
-                {event.meeting_url && (
-                  <div className="flex items-center gap-2 text-sm mb-2">
-                    <Video className="h-4 w-4 text-primary" />
-                    <a 
-                      href={event.meeting_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      화상 회의 참여
-                    </a>
                   </div>
                 )}
 
