@@ -98,6 +98,8 @@ const Messages = () => {
       return;
     }
 
+    console.log('📩 Fetched messages:', data);
+    console.log('📩 First message sender:', data?.[0]?.sender);
     setMessages(data || []);
   };
 
@@ -226,7 +228,14 @@ const Messages = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {messages.map((message) => (
+                  {messages.map((message) => {
+                    console.log('🔍 Rendering message:', {
+                      id: message.id,
+                      sender: message.sender,
+                      senderRole: message.sender?.role,
+                      senderName: message.sender?.full_name
+                    });
+                    return (
                     <Card key={message.id} className="hover:shadow-md transition-shadow">
                       <CardContent className="pt-6">
                         <div className="flex justify-between items-start mb-3">
@@ -254,7 +263,8 @@ const Messages = () => {
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
+                  );
+                  })}
                 </div>
               )}
             </ScrollArea>
