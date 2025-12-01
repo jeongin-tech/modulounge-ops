@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpg";
 
@@ -21,6 +22,7 @@ const Auth = () => {
   const [companyName, setCompanyName] = useState("");
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState<UserRole>("PARTNER");
+  const [serviceType, setServiceType] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,6 +41,7 @@ const Auth = () => {
               company_name: companyName,
               phone,
               role,
+              service_type: serviceType || null,
             },
           },
         });
@@ -108,16 +111,35 @@ const Auth = () => {
                 </div>
 
                 {role === "PARTNER" && (
-                  <div className="space-y-2">
-                    <Label htmlFor="companyName">업체명</Label>
-                    <Input
-                      id="companyName"
-                      type="text"
-                      placeholder="업체명을 입력하세요"
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
-                    />
-                  </div>
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="companyName">업체명</Label>
+                      <Input
+                        id="companyName"
+                        type="text"
+                        placeholder="업체명을 입력하세요"
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="serviceType">서비스 종류 *</Label>
+                      <Select value={serviceType} onValueChange={setServiceType} required>
+                        <SelectTrigger className="bg-background">
+                          <SelectValue placeholder="서비스 종류를 선택하세요" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background">
+                          <SelectItem value="케이터링">케이터링</SelectItem>
+                          <SelectItem value="뷔페서비스">뷔페서비스</SelectItem>
+                          <SelectItem value="청소서비스">청소서비스</SelectItem>
+                          <SelectItem value="MC">MC</SelectItem>
+                          <SelectItem value="사진촬영">사진촬영</SelectItem>
+                          <SelectItem value="파티룸">파티룸</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
                 )}
 
                 <div className="space-y-2">
