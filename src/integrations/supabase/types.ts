@@ -214,6 +214,41 @@ export type Database = {
           service_type?: string | null
           updated_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "fk_service_type"
+            columns: ["service_type"]
+            isOneToOne: false
+            referencedRelation: "service_types"
+            referencedColumns: ["name"]
+          },
+        ]
+      }
+      service_types: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+        }
         Relationships: []
       }
       settlements: {
