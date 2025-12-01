@@ -42,8 +42,7 @@ interface User {
   phone: string | null;
   role: "STAFF" | "PARTNER";
   service_type: string | null;
-  service_region_sido: string | null;
-  service_region_gugun: string | null;
+  service_regions: Array<{sido: string, gugun: string}>;
   business_registration_number: string | null;
   representative_name: string | null;
   commission_rate: number | null;
@@ -64,12 +63,14 @@ const Users = () => {
     phone: "",
     role: "PARTNER" as "STAFF" | "PARTNER",
     service_type: "",
-    sido: "",
-    gugun: "",
     business_number: "",
     representative_name: "",
     commission_rate: "",
   });
+  
+  const [selectedRegions, setSelectedRegions] = useState<Array<{sido: string, gugun: string}>>([]);
+  const [sido, setSido] = useState("");
+  const [gugun, setGugun] = useState("");
 
   useEffect(() => {
     fetchUsers();
@@ -84,12 +85,38 @@ const Users = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setUsers(data || []);
+      
+      // Parse service_regions from JSON
+      const parsedData = data?.map(user => ({
+        ...user,
+        service_regions: Array.isArray(user.service_regions) 
+          ? user.service_regions 
+          : JSON.parse((user.service_regions as any) || '[]')
+      }));
+      
+      setUsers(parsedData || []);
     } catch (error: any) {
       toast.error("사용자 목록을 불러오는데 실패했습니다.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAddRegion = () => {
+    if (sido && gugun) {
+      const isDuplicate = selectedRegions.some(
+        r => r.sido === sido && r.gugun === gugun
+      );
+      if (!isDuplicate) {
+        setSelectedRegions([...selectedRegions, { sido, gugun }]);
+      }
+      setSido("");
+      setGugun("");
+    }
+  };
+
+  const handleRemoveRegion = (index: number) => {
+    setSelectedRegions(selectedRegions.filter((_, i) => i !== index));
   };
 
   const handleOpenDialog = (user?: User) => {
@@ -103,12 +130,13 @@ const Users = () => {
         phone: user.phone || "",
         role: user.role,
         service_type: user.service_type || "",
-        sido: user.service_region_sido || "",
-        gugun: user.service_region_gugun || "",
         business_number: user.business_registration_number || "",
         representative_name: user.representative_name || "",
         commission_rate: user.commission_rate?.toString() || "",
       });
+      setSelectedRegions(user.service_regions || []);
+      setSido("");
+      setGugun("");
     } else {
       setEditingUser(null);
       setFormData({
@@ -119,12 +147,13 @@ const Users = () => {
         phone: "",
         role: "PARTNER",
         service_type: "",
-        sido: "",
-        gugun: "",
         business_number: "",
         representative_name: "",
         commission_rate: "",
       });
+      setSelectedRegions([]);
+      setSido("");
+      setGugun("");
     }
     setDialogOpen(true);
   };
@@ -142,8 +171,7 @@ const Users = () => {
             company_name: formData.company_name || null,
             phone: formData.phone || null,
             service_type: formData.service_type || null,
-            service_region_sido: formData.sido || null,
-            service_region_gugun: formData.gugun || null,
+            service_regions: selectedRegions,
             business_registration_number: formData.business_number || null,
             representative_name: formData.representative_name || null,
             commission_rate: formData.commission_rate ? parseFloat(formData.commission_rate) : null,
@@ -165,8 +193,7 @@ const Users = () => {
               phone: formData.phone,
               role: formData.role,
               service_type: formData.service_type || null,
-              service_region_sido: formData.sido || null,
-              service_region_gugun: formData.gugun || null,
+              service_regions: JSON.stringify(selectedRegions),
               business_registration_number: formData.business_number || null,
               representative_name: formData.representative_name || null,
             },
@@ -351,45 +378,73 @@ const Users = () => {
                       </Select>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="sido">서비스 지역 (시/도) *</Label>
-                      <Select 
-                        value={formData.sido} 
-                        onValueChange={(value) => {
-                          setFormData({ ...formData, sido: value, gugun: "" });
-                        }}
-                        required
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="시/도를 선택하세요" />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-60">
-                          {Object.keys(KOREA_REGIONS).map((region) => (
-                            <SelectItem key={region} value={region}>{region}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {formData.sido && (
-                      <div className="space-y-2">
-                        <Label htmlFor="gugun">서비스 지역 (군/구) *</Label>
-                        <Select 
-                          value={formData.gugun} 
-                          onValueChange={(value) => setFormData({ ...formData, gugun: value })}
-                          required
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="군/구를 선택하세요" />
+                    <div className="space-y-3">
+                      <Label>서비스 지역 (중복 선택 가능) *</Label>
+                      
+                      <div className="flex gap-2">
+                        <Select value={sido} onValueChange={(value) => { setSido(value); setGugun(""); }}>
+                          <SelectTrigger className="flex-1">
+                            <SelectValue placeholder="시/도 선택" />
                           </SelectTrigger>
                           <SelectContent className="max-h-60">
-                            {KOREA_REGIONS[formData.sido as keyof typeof KOREA_REGIONS]?.map((gu) => (
-                              <SelectItem key={gu} value={gu}>{gu}</SelectItem>
+                            {Object.keys(KOREA_REGIONS).map((region) => (
+                              <SelectItem key={region} value={region}>{region}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
+
+                        {sido && (
+                          <Select value={gugun} onValueChange={setGugun}>
+                            <SelectTrigger className="flex-1">
+                              <SelectValue placeholder="군/구 선택" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-60">
+                              <SelectItem value="전체">전체</SelectItem>
+                              {KOREA_REGIONS[sido as keyof typeof KOREA_REGIONS]?.map((gu) => (
+                                <SelectItem key={gu} value={gu}>{gu}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
                       </div>
-                    )}
+
+                      {sido && gugun && (
+                        <Button
+                          type="button"
+                          onClick={handleAddRegion}
+                          variant="outline"
+                          className="w-full"
+                        >
+                          지역 추가
+                        </Button>
+                      )}
+
+                      {selectedRegions.length > 0 && (
+                        <div className="flex flex-wrap gap-2 p-3 border rounded-md bg-muted/30">
+                          {selectedRegions.map((region, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => handleRemoveRegion(index)}
+                              className="group flex items-center gap-1 px-3 py-1.5 bg-primary/10 hover:bg-destructive/10 text-sm rounded-full transition-colors"
+                            >
+                              <span className="group-hover:line-through">
+                                {region.sido} {region.gugun}
+                              </span>
+                              <span className="text-muted-foreground group-hover:text-destructive transition-colors">
+                                ✕
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {selectedRegions.length === 0 && (
+                        <p className="text-sm text-muted-foreground">
+                          최소 1개 이상의 서비스 지역을 선택해주세요
+                        </p>
+                      )}
+                    </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="commission_rate">수수료율 (%)</Label>
@@ -469,8 +524,8 @@ const Users = () => {
                       <TableCell>{user.company_name || "-"}</TableCell>
                       <TableCell>{user.service_type || "-"}</TableCell>
                       <TableCell>
-                        {user.service_region_sido && user.service_region_gugun 
-                          ? `${user.service_region_sido} ${user.service_region_gugun}`
+                        {user.service_regions && user.service_regions.length > 0
+                          ? user.service_regions.map(r => `${r.sido} ${r.gugun}`).join(", ")
                           : "-"}
                       </TableCell>
                       <TableCell>

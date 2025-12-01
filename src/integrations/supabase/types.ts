@@ -192,8 +192,7 @@ export type Database = {
           phone: string | null
           representative_name: string | null
           role: Database["public"]["Enums"]["app_role"]
-          service_region_gugun: string | null
-          service_region_sido: string | null
+          service_regions: Json | null
           service_type: string | null
           updated_at: string
         }
@@ -208,8 +207,7 @@ export type Database = {
           phone?: string | null
           representative_name?: string | null
           role?: Database["public"]["Enums"]["app_role"]
-          service_region_gugun?: string | null
-          service_region_sido?: string | null
+          service_regions?: Json | null
           service_type?: string | null
           updated_at?: string
         }
@@ -224,8 +222,7 @@ export type Database = {
           phone?: string | null
           representative_name?: string | null
           role?: Database["public"]["Enums"]["app_role"]
-          service_region_gugun?: string | null
-          service_region_sido?: string | null
+          service_regions?: Json | null
           service_type?: string | null
           updated_at?: string
         }
