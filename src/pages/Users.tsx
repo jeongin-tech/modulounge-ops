@@ -13,6 +13,27 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from "sonner";
 import { Pencil, Trash2, Plus } from "lucide-react";
 
+// 대한민국 시도/군구 데이터
+const KOREA_REGIONS = {
+  "서울특별시": ["강남구", "강동구", "강북구", "강서구", "관악구", "광진구", "구로구", "금천구", "노원구", "도봉구", "동대문구", "동작구", "마포구", "서대문구", "서초구", "성동구", "성북구", "송파구", "양천구", "영등포구", "용산구", "은평구", "종로구", "중구", "중랑구"],
+  "부산광역시": ["강서구", "금정구", "기장군", "남구", "동구", "동래구", "부산진구", "북구", "사상구", "사하구", "서구", "수영구", "연제구", "영도구", "중구", "해운대구"],
+  "대구광역시": ["남구", "달서구", "달성군", "동구", "북구", "서구", "수성구", "중구"],
+  "인천광역시": ["강화군", "계양구", "남동구", "동구", "미추홀구", "부평구", "서구", "연수구", "옹진군", "중구"],
+  "광주광역시": ["광산구", "남구", "동구", "북구", "서구"],
+  "대전광역시": ["대덕구", "동구", "서구", "유성구", "중구"],
+  "울산광역시": ["남구", "동구", "북구", "울주군", "중구"],
+  "세종특별자치시": ["세종특별자치시"],
+  "경기도": ["가평군", "고양시", "과천시", "광명시", "광주시", "구리시", "군포시", "김포시", "남양주시", "동두천시", "부천시", "성남시", "수원시", "시흥시", "안산시", "안성시", "안양시", "양주시", "양평군", "여주시", "연천군", "오산시", "용인시", "의왕시", "의정부시", "이천시", "파주시", "평택시", "포천시", "하남시", "화성시"],
+  "강원특별자치도": ["강릉시", "고성군", "동해시", "삼척시", "속초시", "양구군", "양양군", "영월군", "원주시", "인제군", "정선군", "철원군", "춘천시", "태백시", "평창군", "홍천군", "화천군", "횡성군"],
+  "충청북도": ["괴산군", "단양군", "보은군", "영동군", "옥천군", "음성군", "제천시", "증평군", "진천군", "청주시", "충주시"],
+  "충청남도": ["계룡시", "공주시", "금산군", "논산시", "당진시", "보령시", "부여군", "서산시", "서천군", "아산시", "예산군", "천안시", "청양군", "태안군", "홍성군"],
+  "전북특별자치도": ["고창군", "군산시", "김제시", "남원시", "무주군", "부안군", "순창군", "완주군", "익산시", "임실군", "장수군", "전주시", "정읍시", "진안군"],
+  "전라남도": ["강진군", "고흥군", "곡성군", "광양시", "구례군", "나주시", "담양군", "목포시", "무안군", "보성군", "순천시", "신안군", "여수시", "영광군", "영암군", "완도군", "장성군", "장흥군", "진도군", "함평군", "해남군", "화순군"],
+  "경상북도": ["경산시", "경주시", "고령군", "구미시", "군위군", "김천시", "문경시", "봉화군", "상주시", "성주군", "안동시", "영덕군", "영양군", "영주시", "영천시", "예천군", "울릉군", "울진군", "의성군", "청도군", "청송군", "칠곡군", "포항시"],
+  "경상남도": ["거제시", "거창군", "고성군", "김해시", "남해군", "밀양시", "사천시", "산청군", "양산시", "의령군", "진주시", "창녕군", "창원시", "통영시", "하동군", "함안군", "함양군", "합천군"],
+  "제주특별자치도": ["서귀포시", "제주시"]
+};
+
 interface User {
   id: string;
   email: string;
@@ -21,6 +42,11 @@ interface User {
   phone: string | null;
   role: "STAFF" | "PARTNER";
   service_type: string | null;
+  service_region_sido: string | null;
+  service_region_gugun: string | null;
+  business_registration_number: string | null;
+  representative_name: string | null;
+  commission_rate: number | null;
   created_at: string;
 }
 
@@ -38,6 +64,11 @@ const Users = () => {
     phone: "",
     role: "PARTNER" as "STAFF" | "PARTNER",
     service_type: "",
+    sido: "",
+    gugun: "",
+    business_number: "",
+    representative_name: "",
+    commission_rate: "",
   });
 
   useEffect(() => {
@@ -72,6 +103,11 @@ const Users = () => {
         phone: user.phone || "",
         role: user.role,
         service_type: user.service_type || "",
+        sido: user.service_region_sido || "",
+        gugun: user.service_region_gugun || "",
+        business_number: user.business_registration_number || "",
+        representative_name: user.representative_name || "",
+        commission_rate: user.commission_rate?.toString() || "",
       });
     } else {
       setEditingUser(null);
@@ -83,6 +119,11 @@ const Users = () => {
         phone: "",
         role: "PARTNER",
         service_type: "",
+        sido: "",
+        gugun: "",
+        business_number: "",
+        representative_name: "",
+        commission_rate: "",
       });
     }
     setDialogOpen(true);
@@ -101,6 +142,11 @@ const Users = () => {
             company_name: formData.company_name || null,
             phone: formData.phone || null,
             service_type: formData.service_type || null,
+            service_region_sido: formData.sido || null,
+            service_region_gugun: formData.gugun || null,
+            business_registration_number: formData.business_number || null,
+            representative_name: formData.representative_name || null,
+            commission_rate: formData.commission_rate ? parseFloat(formData.commission_rate) : null,
           })
           .eq("id", editingUser.id);
 
@@ -119,6 +165,10 @@ const Users = () => {
               phone: formData.phone,
               role: formData.role,
               service_type: formData.service_type || null,
+              service_region_sido: formData.sido || null,
+              service_region_gugun: formData.gugun || null,
+              business_registration_number: formData.business_number || null,
+              representative_name: formData.representative_name || null,
             },
           },
         });
@@ -250,11 +300,33 @@ const Users = () => {
                 {formData.role === "PARTNER" && (
                   <>
                     <div className="space-y-2">
-                      <Label htmlFor="company_name">업체명</Label>
+                      <Label htmlFor="company_name">업체명 *</Label>
                       <Input
                         id="company_name"
                         value={formData.company_name}
                         onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="representative_name">대표자명 *</Label>
+                      <Input
+                        id="representative_name"
+                        value={formData.representative_name}
+                        onChange={(e) => setFormData({ ...formData, representative_name: e.target.value })}
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="business_number">사업자등록번호 *</Label>
+                      <Input
+                        id="business_number"
+                        value={formData.business_number}
+                        onChange={(e) => setFormData({ ...formData, business_number: e.target.value })}
+                        placeholder="123-45-67890"
+                        required
                       />
                     </div>
                     
@@ -277,6 +349,60 @@ const Users = () => {
                           <SelectItem value="파티룸">파티룸</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="sido">서비스 지역 (시/도) *</Label>
+                      <Select 
+                        value={formData.sido} 
+                        onValueChange={(value) => {
+                          setFormData({ ...formData, sido: value, gugun: "" });
+                        }}
+                        required
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="시/도를 선택하세요" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60">
+                          {Object.keys(KOREA_REGIONS).map((region) => (
+                            <SelectItem key={region} value={region}>{region}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {formData.sido && (
+                      <div className="space-y-2">
+                        <Label htmlFor="gugun">서비스 지역 (군/구) *</Label>
+                        <Select 
+                          value={formData.gugun} 
+                          onValueChange={(value) => setFormData({ ...formData, gugun: value })}
+                          required
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="군/구를 선택하세요" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-60">
+                            {KOREA_REGIONS[formData.sido as keyof typeof KOREA_REGIONS]?.map((gu) => (
+                              <SelectItem key={gu} value={gu}>{gu}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <Label htmlFor="commission_rate">수수료율 (%)</Label>
+                      <Input
+                        id="commission_rate"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={formData.commission_rate}
+                        onChange={(e) => setFormData({ ...formData, commission_rate: e.target.value })}
+                        placeholder="예: 15"
+                      />
                     </div>
                   </>
                 )}
@@ -317,15 +443,16 @@ const Users = () => {
                   <TableHead>이름</TableHead>
                   <TableHead>역할</TableHead>
                   <TableHead>업체명</TableHead>
-                  <TableHead>서비스 종류</TableHead>
-                  <TableHead>연락처</TableHead>
+                  <TableHead>서비스</TableHead>
+                  <TableHead>지역</TableHead>
+                  <TableHead>수수료율</TableHead>
                   <TableHead className="text-right">관리</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground">
                       등록된 사용자가 없습니다
                     </TableCell>
                   </TableRow>
@@ -341,7 +468,14 @@ const Users = () => {
                       </TableCell>
                       <TableCell>{user.company_name || "-"}</TableCell>
                       <TableCell>{user.service_type || "-"}</TableCell>
-                      <TableCell>{user.phone || "-"}</TableCell>
+                      <TableCell>
+                        {user.service_region_sido && user.service_region_gugun 
+                          ? `${user.service_region_sido} ${user.service_region_gugun}`
+                          : "-"}
+                      </TableCell>
+                      <TableCell>
+                        {user.commission_rate ? `${user.commission_rate}%` : "-"}
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button
