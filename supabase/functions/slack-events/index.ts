@@ -77,17 +77,20 @@ serve(async (req) => {
           .maybeSingle();
 
         let staffUserId: string;
+        let staffName: string = '관리자';
+        let staffEmail: string = '';
 
         if (matchedStaff) {
           // Found a STAFF user with matching Slack ID
           staffUserId = matchedStaff.id;
+          staffName = matchedStaff.full_name || '관리자';
           console.log('Matched STAFF user:', matchedStaff.full_name, matchedStaff.id);
         } else {
           // Fallback: use any STAFF user
           console.log('No matching STAFF user found, using fallback');
           const { data: staffUsers, error: staffError } = await supabaseClient
             .from('profiles')
-            .select('id')
+            .select('id, full_name, email')
             .eq('role', 'STAFF')
             .limit(1);
 
@@ -103,6 +106,8 @@ serve(async (req) => {
           }
 
           staffUserId = staffUsers[0].id;
+          staffName = staffUsers[0].full_name || '관리자';
+          staffEmail = staffUsers[0].email || '';
         }
 
         // Extract order number from message if present (e.g., "주문 #ORD-001에 대한 답변...")
@@ -129,6 +134,9 @@ serve(async (req) => {
             receiver_id: partnerProfile.id,
             message: event.text,
             order_id: orderId,
+            sender_name: staffName,
+            sender_email: staffEmail,
+            sender_role: 'STAFF',
           });
 
         if (insertError) {

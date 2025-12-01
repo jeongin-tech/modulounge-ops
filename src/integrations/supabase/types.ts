@@ -138,7 +138,10 @@ export type Database = {
           message: string
           order_id: string | null
           receiver_id: string | null
+          sender_email: string | null
           sender_id: string
+          sender_name: string | null
+          sender_role: string | null
         }
         Insert: {
           created_at?: string
@@ -147,7 +150,10 @@ export type Database = {
           message: string
           order_id?: string | null
           receiver_id?: string | null
+          sender_email?: string | null
           sender_id: string
+          sender_name?: string | null
+          sender_role?: string | null
         }
         Update: {
           created_at?: string
@@ -156,7 +162,10 @@ export type Database = {
           message?: string
           order_id?: string | null
           receiver_id?: string | null
+          sender_email?: string | null
           sender_id?: string
+          sender_name?: string | null
+          sender_role?: string | null
         }
         Relationships: [
           {
