@@ -44,6 +44,7 @@ const Auth = () => {
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState<UserRole>("PARTNER");
   const [serviceType, setServiceType] = useState("");
+  const [selectedRegions, setSelectedRegions] = useState<Array<{sido: string, gugun: string}>>([]);
   const [sido, setSido] = useState("");
   const [gugun, setGugun] = useState("");
   const [businessNumber, setBusinessNumber] = useState("");
@@ -54,6 +55,25 @@ const Auth = () => {
   const handleSidoChange = (value: string) => {
     setSido(value);
     setGugun("");
+  };
+
+  // 지역 추가
+  const handleAddRegion = () => {
+    if (sido && gugun) {
+      const isDuplicate = selectedRegions.some(
+        r => r.sido === sido && r.gugun === gugun
+      );
+      if (!isDuplicate) {
+        setSelectedRegions([...selectedRegions, { sido, gugun }]);
+      }
+      setSido("");
+      setGugun("");
+    }
+  };
+
+  // 지역 삭제
+  const handleRemoveRegion = (index: number) => {
+    setSelectedRegions(selectedRegions.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -73,8 +93,7 @@ const Auth = () => {
               phone,
               role,
               service_type: serviceType || null,
-              service_region_sido: sido || null,
-              service_region_gugun: gugun || null,
+              service_regions: JSON.stringify(selectedRegions),
               business_registration_number: businessNumber || null,
               representative_name: representativeName || null,
             },
@@ -200,35 +219,73 @@ const Auth = () => {
                       </Select>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="sido">서비스 지역 (시/도) *</Label>
-                      <Select value={sido} onValueChange={handleSidoChange} required>
-                        <SelectTrigger className="bg-background">
-                          <SelectValue placeholder="시/도를 선택하세요" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-background max-h-60">
-                          {Object.keys(KOREA_REGIONS).map((region) => (
-                            <SelectItem key={region} value={region}>{region}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {sido && (
-                      <div className="space-y-2">
-                        <Label htmlFor="gugun">서비스 지역 (군/구) *</Label>
-                        <Select value={gugun} onValueChange={setGugun} required>
-                          <SelectTrigger className="bg-background">
-                            <SelectValue placeholder="군/구를 선택하세요" />
+                    <div className="space-y-3">
+                      <Label>서비스 지역 (중복 선택 가능) *</Label>
+                      
+                      <div className="flex gap-2">
+                        <Select value={sido} onValueChange={handleSidoChange}>
+                          <SelectTrigger className="bg-background flex-1">
+                            <SelectValue placeholder="시/도 선택" />
                           </SelectTrigger>
                           <SelectContent className="bg-background max-h-60">
-                            {KOREA_REGIONS[sido as keyof typeof KOREA_REGIONS]?.map((gu) => (
-                              <SelectItem key={gu} value={gu}>{gu}</SelectItem>
+                            {Object.keys(KOREA_REGIONS).map((region) => (
+                              <SelectItem key={region} value={region}>{region}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
+
+                        {sido && (
+                          <Select value={gugun} onValueChange={setGugun}>
+                            <SelectTrigger className="bg-background flex-1">
+                              <SelectValue placeholder="군/구 선택" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-background max-h-60">
+                              <SelectItem value="전체">전체</SelectItem>
+                              {KOREA_REGIONS[sido as keyof typeof KOREA_REGIONS]?.map((gu) => (
+                                <SelectItem key={gu} value={gu}>{gu}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
                       </div>
-                    )}
+
+                      {sido && gugun && (
+                        <Button
+                          type="button"
+                          onClick={handleAddRegion}
+                          variant="outline"
+                          className="w-full"
+                        >
+                          지역 추가
+                        </Button>
+                      )}
+
+                      {selectedRegions.length > 0 && (
+                        <div className="flex flex-wrap gap-2 p-3 border rounded-md bg-muted/30">
+                          {selectedRegions.map((region, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => handleRemoveRegion(index)}
+                              className="group flex items-center gap-1 px-3 py-1.5 bg-primary/10 hover:bg-destructive/10 text-sm rounded-full transition-colors"
+                            >
+                              <span className="group-hover:line-through">
+                                {region.sido} {region.gugun}
+                              </span>
+                              <span className="text-muted-foreground group-hover:text-destructive transition-colors">
+                                ✕
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {selectedRegions.length === 0 && (
+                        <p className="text-sm text-muted-foreground">
+                          최소 1개 이상의 서비스 지역을 선택해주세요
+                        </p>
+                      )}
+                    </div>
                   </>
                 )}
 
@@ -269,7 +326,11 @@ const Auth = () => {
               />
             </div>
 
-            <Button type="submit" className="w-full bg-gradient-primary" disabled={loading}>
+            <Button 
+              type="submit" 
+              className="w-full bg-gradient-primary" 
+              disabled={loading || (mode === "signup" && role === "PARTNER" && selectedRegions.length === 0)}
+            >
               {loading ? "처리중..." : mode === "login" ? "로그인" : "회원가입"}
             </Button>
 
