@@ -134,6 +134,12 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
       roles: ["STAFF"],
     },
     {
+      icon: <Users className="h-5 w-5" />,
+      label: "사용자 관리",
+      path: "/users",
+      roles: ["STAFF"],
+    },
+    {
       icon: <MessageSquare className="h-5 w-5" />,
       label: "C/S",
       path: "/messages",
