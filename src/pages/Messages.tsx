@@ -36,7 +36,30 @@ const Messages = () => {
   useEffect(() => {
     checkAuth();
     fetchMessages();
+    setupRealtimeSubscription();
   }, []);
+
+  const setupRealtimeSubscription = () => {
+    const channel = supabase
+      .channel('messages_channel')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages'
+        },
+        (payload) => {
+          console.log('New message received:', payload);
+          fetchMessages(); // Refresh messages when new one arrives
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  };
 
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
