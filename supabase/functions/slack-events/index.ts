@@ -42,6 +42,28 @@ serve(async (req) => {
           Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
         );
 
+        // Get the channel ID from the event
+        const channelId = event.channel;
+        console.log('Message from channel:', channelId);
+
+        // Find which partner this channel belongs to
+        const { data: partnerProfile, error: partnerError } = await supabaseClient
+          .from('profiles')
+          .select('id')
+          .eq('slack_channel_id', channelId)
+          .eq('role', 'PARTNER')
+          .single();
+
+        if (partnerError || !partnerProfile) {
+          console.log('No partner found for channel:', channelId);
+          return new Response(
+            JSON.stringify({ success: true, skipped: true, reason: 'Channel not mapped to partner' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        console.log('Message is for partner:', partnerProfile.id);
+
         // Get a STAFF user to use as sender
         const { data: staffUsers, error: staffError } = await supabaseClient
           .from('profiles')
@@ -78,14 +100,14 @@ serve(async (req) => {
           }
         }
 
-        // Insert message from STAFF
+        // Insert message from STAFF to specific partner
         const { error: insertError } = await supabaseClient
           .from('messages')
           .insert({
             sender_id: staffUserId,
+            receiver_id: partnerProfile.id,
             message: event.text,
             order_id: orderId,
-            receiver_id: null, // Broadcasting to all partners
           });
 
         if (insertError) {

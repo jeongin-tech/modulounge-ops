@@ -310,6 +310,8 @@ export type Database = {
           role: Database["public"]["Enums"]["app_role"]
           service_regions: Json | null
           service_type: string | null
+          slack_channel_id: string | null
+          slack_webhook_url: string | null
           updated_at: string
         }
         Insert: {
@@ -325,6 +327,8 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"]
           service_regions?: Json | null
           service_type?: string | null
+          slack_channel_id?: string | null
+          slack_webhook_url?: string | null
           updated_at?: string
         }
         Update: {
@@ -340,6 +344,8 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"]
           service_regions?: Json | null
           service_type?: string | null
+          slack_channel_id?: string | null
+          slack_webhook_url?: string | null
           updated_at?: string
         }
         Relationships: []

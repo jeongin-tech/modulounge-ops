@@ -48,10 +48,25 @@ serve(async (req) => {
       );
     }
 
-    const slackWebhookUrl = Deno.env.get('SLACK_WEBHOOK_URL');
+    // Get partner's Slack webhook URL from profile
+    const { data: senderProfile, error: profileError } = await supabaseClient
+      .from('profiles')
+      .select('slack_webhook_url')
+      .eq('id', message.sender_id)
+      .single();
+
+    if (profileError) {
+      console.error('Error fetching sender profile:', profileError);
+      throw profileError;
+    }
+
+    const slackWebhookUrl = senderProfile?.slack_webhook_url;
     if (!slackWebhookUrl) {
-      console.error('SLACK_WEBHOOK_URL not configured');
-      throw new Error('Slack webhook URL not configured');
+      console.log('No Slack webhook URL configured for this partner');
+      return new Response(
+        JSON.stringify({ success: true, skipped: true, reason: 'No webhook URL configured' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Format message for Slack
