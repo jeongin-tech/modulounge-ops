@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Pencil, Trash2, Plus } from "lucide-react";
+import { Pencil, Trash2, Plus, Link2 } from "lucide-react";
 
 // 대한민국 시도/군구 데이터
 const KOREA_REGIONS = {
@@ -46,6 +46,8 @@ interface User {
   business_registration_number: string | null;
   representative_name: string | null;
   commission_rate: number | null;
+  slack_webhook_url: string | null;
+  slack_channel_id: string | null;
   created_at: string;
 }
 
@@ -54,6 +56,13 @@ const Users = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<"STAFF" | "PARTNER" | null>(null);
+  const [slackDialogOpen, setSlackDialogOpen] = useState(false);
+  const [editingSlackUser, setEditingSlackUser] = useState<User | null>(null);
+  const [slackFormData, setSlackFormData] = useState({
+    slack_webhook_url: "",
+    slack_channel_id: "",
+  });
   
   const [formData, setFormData] = useState({
     email: "",
@@ -73,8 +82,28 @@ const Users = () => {
   const [gugun, setGugun] = useState("");
 
   useEffect(() => {
+    checkCurrentUser();
     fetchUsers();
   }, []);
+
+  const checkCurrentUser = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      if (profile) {
+        setCurrentUserRole(profile.role);
+      }
+    } catch (error) {
+      console.error("Failed to check user role:", error);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -226,6 +255,39 @@ const Users = () => {
       fetchUsers();
     } catch (error: any) {
       toast.error("사용자 삭제에 실패했습니다.");
+    }
+  };
+
+  const handleOpenSlackDialog = (user: User) => {
+    setEditingSlackUser(user);
+    setSlackFormData({
+      slack_webhook_url: user.slack_webhook_url || "",
+      slack_channel_id: user.slack_channel_id || "",
+    });
+    setSlackDialogOpen(true);
+  };
+
+  const handleSlackSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!editingSlackUser) return;
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          slack_webhook_url: slackFormData.slack_webhook_url || null,
+          slack_channel_id: slackFormData.slack_channel_id || null,
+        })
+        .eq("id", editingSlackUser.id);
+
+      if (error) throw error;
+      
+      toast.success("Slack 연동 정보가 저장되었습니다.");
+      setSlackDialogOpen(false);
+      fetchUsers();
+    } catch (error: any) {
+      toast.error("저장에 실패했습니다.");
     }
   };
 
@@ -501,13 +563,14 @@ const Users = () => {
                   <TableHead>서비스</TableHead>
                   <TableHead>지역</TableHead>
                   <TableHead>수수료율</TableHead>
+                  {currentUserRole === "STAFF" && <TableHead>Slack 연동</TableHead>}
                   <TableHead className="text-right">관리</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground">
+                    <TableCell colSpan={currentUserRole === "STAFF" ? 9 : 8} className="text-center text-muted-foreground">
                       등록된 사용자가 없습니다
                     </TableCell>
                   </TableRow>
@@ -531,6 +594,22 @@ const Users = () => {
                       <TableCell>
                         {user.commission_rate ? `${user.commission_rate}%` : "-"}
                       </TableCell>
+                      {currentUserRole === "STAFF" && user.role === "PARTNER" && (
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            variant={user.slack_webhook_url && user.slack_channel_id ? "default" : "outline"}
+                            onClick={() => handleOpenSlackDialog(user)}
+                            className="gap-2"
+                          >
+                            <Link2 className="h-3 w-3" />
+                            {user.slack_webhook_url && user.slack_channel_id ? "연동중" : "연동하기"}
+                          </Button>
+                        </TableCell>
+                      )}
+                      {currentUserRole === "STAFF" && user.role === "STAFF" && (
+                        <TableCell>-</TableCell>
+                      )}
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button
@@ -571,6 +650,70 @@ const Users = () => {
             </Table>
           </CardContent>
         </Card>
+
+        {/* Slack 연동 다이얼로그 */}
+        <Dialog open={slackDialogOpen} onOpenChange={setSlackDialogOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Slack 연동 설정</DialogTitle>
+              <DialogDescription>
+                {editingSlackUser?.company_name || editingSlackUser?.full_name}의 전용 Slack 채널을 연동합니다
+              </DialogDescription>
+            </DialogHeader>
+            
+            <form onSubmit={handleSlackSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="slack_channel_id">Slack 채널 ID *</Label>
+                <Input
+                  id="slack_channel_id"
+                  value={slackFormData.slack_channel_id}
+                  onChange={(e) => setSlackFormData({ ...slackFormData, slack_channel_id: e.target.value })}
+                  placeholder="예: C01234ABCD"
+                  required
+                />
+                <div className="text-sm text-muted-foreground space-y-1 p-3 bg-muted/50 rounded-md">
+                  <p className="font-medium">📋 채널 ID 확인 방법:</p>
+                  <ol className="list-decimal list-inside space-y-1 ml-2">
+                    <li>Slack에서 해당 채널 열기</li>
+                    <li>채널 이름을 우클릭 → "링크 복사" 선택</li>
+                    <li>복사된 URL에서 마지막 부분이 채널 ID입니다</li>
+                    <li>예시: <code className="text-xs bg-background px-1 py-0.5 rounded">https://app.slack.com/client/.../C01234ABCD</code></li>
+                  </ol>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="slack_webhook_url">Slack Webhook URL *</Label>
+                <Input
+                  id="slack_webhook_url"
+                  value={slackFormData.slack_webhook_url}
+                  onChange={(e) => setSlackFormData({ ...slackFormData, slack_webhook_url: e.target.value })}
+                  placeholder="https://hooks.slack.com/services/..."
+                  required
+                />
+                <div className="text-sm text-muted-foreground space-y-1 p-3 bg-muted/50 rounded-md">
+                  <p className="font-medium">🔗 Webhook URL 생성 방법:</p>
+                  <ol className="list-decimal list-inside space-y-1 ml-2">
+                    <li>Slack API 페이지 접속: <code className="text-xs bg-background px-1 py-0.5 rounded">api.slack.com/apps</code></li>
+                    <li>앱 선택 → "Incoming Webhooks" 메뉴</li>
+                    <li>"Add New Webhook to Workspace" 클릭</li>
+                    <li>이 파트너의 전용 채널 선택</li>
+                    <li>생성된 Webhook URL 복사</li>
+                  </ol>
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-2 pt-4">
+                <Button type="button" variant="outline" onClick={() => setSlackDialogOpen(false)}>
+                  취소
+                </Button>
+                <Button type="submit" className="bg-gradient-primary">
+                  저장
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
