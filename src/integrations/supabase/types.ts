@@ -182,35 +182,50 @@ export type Database = {
       }
       profiles: {
         Row: {
+          business_registration_number: string | null
+          commission_rate: number | null
           company_name: string | null
           created_at: string
           email: string
           full_name: string
           id: string
           phone: string | null
+          representative_name: string | null
           role: Database["public"]["Enums"]["app_role"]
+          service_region_gugun: string | null
+          service_region_sido: string | null
           service_type: string | null
           updated_at: string
         }
         Insert: {
+          business_registration_number?: string | null
+          commission_rate?: number | null
           company_name?: string | null
           created_at?: string
           email: string
           full_name: string
           id: string
           phone?: string | null
+          representative_name?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          service_region_gugun?: string | null
+          service_region_sido?: string | null
           service_type?: string | null
           updated_at?: string
         }
         Update: {
+          business_registration_number?: string | null
+          commission_rate?: number | null
           company_name?: string | null
           created_at?: string
           email?: string
           full_name?: string
           id?: string
           phone?: string | null
+          representative_name?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          service_region_gugun?: string | null
+          service_region_sido?: string | null
           service_type?: string | null
           updated_at?: string
         }
