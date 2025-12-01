@@ -48,6 +48,7 @@ interface User {
   commission_rate: number | null;
   slack_webhook_url: string | null;
   slack_channel_id: string | null;
+  slack_user_id: string | null;
   created_at: string;
 }
 
@@ -75,6 +76,7 @@ const Users = () => {
     business_number: "",
     representative_name: "",
     commission_rate: "",
+    slack_user_id: "",
   });
   
   const [selectedRegions, setSelectedRegions] = useState<Array<{sido: string, gugun: string}>>([]);
@@ -162,6 +164,7 @@ const Users = () => {
         business_number: user.business_registration_number || "",
         representative_name: user.representative_name || "",
         commission_rate: user.commission_rate?.toString() || "",
+        slack_user_id: user.slack_user_id || "",
       });
       setSelectedRegions(user.service_regions || []);
       setSido("");
@@ -179,6 +182,7 @@ const Users = () => {
         business_number: "",
         representative_name: "",
         commission_rate: "",
+        slack_user_id: "",
       });
       setSelectedRegions([]);
       setSido("");
@@ -204,6 +208,7 @@ const Users = () => {
             business_registration_number: formData.business_number || null,
             representative_name: formData.representative_name || null,
             commission_rate: formData.commission_rate ? parseFloat(formData.commission_rate) : null,
+            slack_user_id: formData.slack_user_id || null,
           })
           .eq("id", editingUser.id);
 
@@ -394,6 +399,27 @@ const Users = () => {
                     required
                   />
                 </div>
+
+                {formData.role === "STAFF" && editingUser && (
+                  <div className="space-y-2">
+                    <Label htmlFor="slack_user_id">Slack User ID</Label>
+                    <Input
+                      id="slack_user_id"
+                      value={formData.slack_user_id}
+                      onChange={(e) => setFormData({ ...formData, slack_user_id: e.target.value })}
+                      placeholder="예: U0A15J0U2MP"
+                    />
+                    <div className="text-sm text-muted-foreground space-y-1 p-3 bg-muted/50 rounded-md">
+                      <p className="font-medium">📋 Slack User ID 확인 방법:</p>
+                      <ol className="list-decimal list-inside space-y-1 ml-2">
+                        <li>Slack에서 본인 프로필 클릭</li>
+                        <li>"더보기(⋮)" 메뉴 → "프로필 복사" 선택</li>
+                        <li>메모장에 붙여넣기하면 Member ID 확인 가능</li>
+                        <li>또는 프로필에서 "Member ID" 직접 복사</li>
+                      </ol>
+                    </div>
+                  </div>
+                )}
                 
                 {formData.role === "PARTNER" && (
                   <>

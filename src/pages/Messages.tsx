@@ -232,7 +232,9 @@ const Messages = () => {
                         <div className="flex justify-between items-start mb-3">
                           <div>
                             <p className="font-semibold">
-                              {message.sender?.company_name || message.sender?.full_name}
+                              {message.sender?.role === 'STAFF' 
+                                ? `${message.sender.full_name} (내부직원)`
+                                : message.sender?.company_name || message.sender?.full_name}
                             </p>
                             <p className="text-sm text-muted-foreground">
                               {message.sender?.email}
@@ -240,7 +242,7 @@ const Messages = () => {
                           </div>
                           <div className="text-right">
                             <Badge variant={message.sender?.role === 'PARTNER' ? 'default' : 'secondary'}>
-                              {message.sender?.role === 'PARTNER' ? '파트너' : '내부직원'}
+                              {message.sender?.role === 'PARTNER' ? '파트너' : 'STAFF'}
                             </Badge>
                             <p className="text-xs text-muted-foreground mt-1">
                               {new Date(message.created_at).toLocaleString('ko-KR')}

@@ -64,25 +64,46 @@ serve(async (req) => {
 
         console.log('Message is for partner:', partnerProfile.id);
 
-        // Get a STAFF user to use as sender
-        const { data: staffUsers, error: staffError } = await supabaseClient
+        // Get Slack user ID from the event
+        const slackUserId = event.user;
+        console.log('Slack User ID:', slackUserId);
+
+        // Try to find STAFF user by slack_user_id
+        const { data: matchedStaff, error: matchError } = await supabaseClient
           .from('profiles')
-          .select('id')
+          .select('id, full_name')
+          .eq('slack_user_id', slackUserId)
           .eq('role', 'STAFF')
-          .limit(1);
+          .maybeSingle();
 
-        if (staffError || !staffUsers || staffUsers.length === 0) {
-          console.error('No STAFF user found:', staffError);
-          return new Response(
-            JSON.stringify({ error: 'No STAFF user found' }),
-            { 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-              status: 500 
-            }
-          );
+        let staffUserId: string;
+
+        if (matchedStaff) {
+          // Found a STAFF user with matching Slack ID
+          staffUserId = matchedStaff.id;
+          console.log('Matched STAFF user:', matchedStaff.full_name, matchedStaff.id);
+        } else {
+          // Fallback: use any STAFF user
+          console.log('No matching STAFF user found, using fallback');
+          const { data: staffUsers, error: staffError } = await supabaseClient
+            .from('profiles')
+            .select('id')
+            .eq('role', 'STAFF')
+            .limit(1);
+
+          if (staffError || !staffUsers || staffUsers.length === 0) {
+            console.error('No STAFF user found:', staffError);
+            return new Response(
+              JSON.stringify({ error: 'No STAFF user found' }),
+              { 
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 500 
+              }
+            );
+          }
+
+          staffUserId = staffUsers[0].id;
         }
-
-        const staffUserId = staffUsers[0].id;
 
         // Extract order number from message if present (e.g., "주문 #ORD-001에 대한 답변...")
         let orderId = null;
