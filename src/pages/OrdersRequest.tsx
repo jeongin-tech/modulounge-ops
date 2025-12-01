@@ -13,6 +13,7 @@ interface Partner {
   id: string;
   full_name: string;
   company_name: string;
+  service_type: string | null;
 }
 
 const OrdersRequest = () => {
@@ -35,7 +36,7 @@ const OrdersRequest = () => {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, company_name")
+        .select("id, full_name, company_name, service_type")
         .eq("role", "PARTNER")
         .order("full_name");
 
@@ -43,6 +44,16 @@ const OrdersRequest = () => {
       setPartners(data || []);
     } catch (error: any) {
       toast.error("제휴업체 목록을 불러오는데 실패했습니다.");
+    }
+  };
+
+  const handlePartnerChange = (partnerId: string) => {
+    setSelectedPartner(partnerId);
+    
+    // 선택된 파트너의 서비스 타입 자동 설정
+    const partner = partners.find(p => p.id === partnerId);
+    if (partner?.service_type) {
+      setServiceType(partner.service_type);
     }
   };
 
@@ -118,7 +129,7 @@ const OrdersRequest = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="partner">제휴업체 선택 *</Label>
-                <Select value={selectedPartner} onValueChange={setSelectedPartner} required>
+                <Select value={selectedPartner} onValueChange={handlePartnerChange} required>
                   <SelectTrigger>
                     <SelectValue placeholder="제휴업체를 선택하세요" />
                   </SelectTrigger>
@@ -159,9 +170,9 @@ const OrdersRequest = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="serviceType">서비스 종류 *</Label>
-                  <Select value={serviceType} onValueChange={setServiceType} required>
+                  <Select value={serviceType} onValueChange={setServiceType} required disabled={!selectedPartner}>
                     <SelectTrigger>
-                      <SelectValue placeholder="서비스 종류 선택" />
+                      <SelectValue placeholder={selectedPartner ? "자동 선택됨" : "먼저 제휴업체를 선택하세요"} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="케이터링">케이터링</SelectItem>
