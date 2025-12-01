@@ -311,6 +311,7 @@ export type Database = {
           service_regions: Json | null
           service_type: string | null
           slack_channel_id: string | null
+          slack_user_id: string | null
           slack_webhook_url: string | null
           updated_at: string
         }
@@ -328,6 +329,7 @@ export type Database = {
           service_regions?: Json | null
           service_type?: string | null
           slack_channel_id?: string | null
+          slack_user_id?: string | null
           slack_webhook_url?: string | null
           updated_at?: string
         }
@@ -345,6 +347,7 @@ export type Database = {
           service_regions?: Json | null
           service_type?: string | null
           slack_channel_id?: string | null
+          slack_user_id?: string | null
           slack_webhook_url?: string | null
           updated_at?: string
         }
