@@ -20,6 +20,7 @@ import {
   Search,
   BookOpen,
   Calculator,
+  Tag,
 } from "lucide-react";
 import logo from "@/assets/logo.jpg";
 import { toast } from "sonner";
@@ -136,6 +137,12 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
       icon: <Users className="h-5 w-5" />,
       label: "제휴업체 대시보드",
       path: "/partners",
+      roles: ["STAFF"],
+    },
+    {
+      icon: <Tag className="h-5 w-5" />,
+      label: "제휴업체 가격관리",
+      path: "/pricing",
       roles: ["STAFF"],
     },
     {

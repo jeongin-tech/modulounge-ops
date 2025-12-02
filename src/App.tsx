@@ -24,6 +24,7 @@ import ContractTemplateForm from "./pages/ContractTemplateForm";
 import QuoteGenerator from "./pages/QuoteGenerator";
 import SpaceFinder from "./pages/SpaceFinder";
 import FeeCalculator from "./pages/FeeCalculator";
+import PricingManage from "./pages/PricingManage";
 import Guide from "./pages/Guide";
 import TestPage from "./pages/TestPage";
 import NotFound from "./pages/NotFound";
@@ -57,6 +58,7 @@ const App = () => (
           <Route path="/quote" element={<QuoteGenerator />} />
           <Route path="/space-finder" element={<SpaceFinder />} />
           <Route path="/fee-calculator" element={<FeeCalculator />} />
+          <Route path="/pricing" element={<PricingManage />} />
           <Route path="/guide" element={<Guide />} />
           <Route path="/test" element={<TestPage />} />
           <Route path="/messages" element={<Messages />} />
