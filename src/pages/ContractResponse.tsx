@@ -548,8 +548,8 @@ const ContractResponse = () => {
             예약 전일에 발송되는 대관 메시지 수신을 위해 회원가입이 반드시 필요합니다.<br/>
             아래 링크에서 가입해 주세요.
           </p>
-          <p style={{ fontSize: '15px', color: '#0066cc', marginTop: '10px' }}>
-            👉 https://modlounge.co.kr/site_join_type_choice?back_url=Lw%3D%3D
+          <p style={{ fontSize: '15px', marginTop: '10px' }}>
+            👉 <a href="https://modlounge.co.kr/site_join_type_choice?back_url=Lw%3D%3D" target="_blank" rel="noopener noreferrer" style={{ color: '#0066cc', textDecoration: 'underline' }}>회원가입하러가기</a>
           </p>
         </div>
 
