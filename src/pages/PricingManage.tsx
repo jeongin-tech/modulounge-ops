@@ -537,15 +537,15 @@ const PricingManage = () => {
               <div>
                 <Label>제휴업체 (선택)</Label>
                 <Select
-                  value={groupForm.profile_id}
-                  onValueChange={(v) => setGroupForm({ ...groupForm, profile_id: v })}
+                  value={groupForm.profile_id || "__none__"}
+                  onValueChange={(v) => setGroupForm({ ...groupForm, profile_id: v === "__none__" ? "" : v })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="제휴업체 선택" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">선택 안함</SelectItem>
-                    {profiles.map((p) => (
+                    <SelectItem value="__none__">선택 안함</SelectItem>
+                    {profiles.filter((p) => p.id).map((p) => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.company_name || p.full_name}
                       </SelectItem>
