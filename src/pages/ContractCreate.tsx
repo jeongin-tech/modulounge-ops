@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,12 +7,31 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
+
+interface Template {
+  id: string;
+  name: string;
+  base_price: number;
+  base_guest_count: number;
+  additional_price_per_person: number;
+  cleaning_fee: number;
+  vat_rate: number;
+}
 
 const ContractCreate = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [formData, setFormData] = useState({
     location: "모드라운지 역삼점",
     reservation_date: "",
@@ -27,6 +46,77 @@ const ContractCreate = () => {
     total_amount: 814000,
   });
 
+  useEffect(() => {
+    fetchTemplates();
+  }, []);
+
+  const fetchTemplates = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("contract_templates")
+        .select("*")
+        .eq("is_active", true)
+        .order("name");
+
+      if (error) throw error;
+      setTemplates(data || []);
+      
+      // Auto-select first template if available
+      if (data && data.length > 0) {
+        setSelectedTemplate(data[0].id);
+        applyTemplate(data[0]);
+      }
+    } catch (error) {
+      console.error("템플릿 조회 오류:", error);
+    }
+  };
+
+  const applyTemplate = (template: Template) => {
+    const additionalGuests = Math.max(0, formData.guest_count - template.base_guest_count);
+    const additionalPrice = additionalGuests * template.additional_price_per_person;
+    const subtotal = template.base_price + additionalPrice + template.cleaning_fee;
+    const vat = Math.round(subtotal * template.vat_rate);
+    const total = subtotal + vat;
+
+    setFormData({
+      ...formData,
+      base_price: template.base_price,
+      additional_price: additionalPrice,
+      cleaning_fee: template.cleaning_fee,
+      vat: vat,
+      total_amount: total,
+    });
+  };
+
+  const handleTemplateChange = (templateId: string) => {
+    setSelectedTemplate(templateId);
+    const template = templates.find((t) => t.id === templateId);
+    if (template) {
+      applyTemplate(template);
+    }
+  };
+
+  const handleGuestCountChange = (count: number) => {
+    setFormData({ ...formData, guest_count: count });
+    
+    const template = templates.find((t) => t.id === selectedTemplate);
+    if (template) {
+      const additionalGuests = Math.max(0, count - template.base_guest_count);
+      const additionalPrice = additionalGuests * template.additional_price_per_person;
+      const subtotal = template.base_price + additionalPrice + template.cleaning_fee;
+      const vat = Math.round(subtotal * template.vat_rate);
+      const total = subtotal + vat;
+
+      setFormData({
+        ...formData,
+        guest_count: count,
+        additional_price: additionalPrice,
+        vat: vat,
+        total_amount: total,
+      });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -40,6 +130,7 @@ const ContractCreate = () => {
         .insert([
           {
             ...formData,
+            template_id: selectedTemplate,
             created_by: user.id,
           },
         ])
@@ -84,6 +175,43 @@ const ContractCreate = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>템플릿 선택</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="template">계약서 템플릿 *</Label>
+                {templates.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    활성화된 템플릿이 없습니다.{" "}
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="p-0 h-auto"
+                      onClick={() => navigate("/contracts/templates")}
+                    >
+                      템플릿 관리로 이동
+                    </Button>
+                  </p>
+                ) : (
+                  <Select value={selectedTemplate} onValueChange={handleTemplateChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="템플릿을 선택하세요" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {templates.map((template) => (
+                        <SelectItem key={template.id} value={template.id}>
+                          {template.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>예약 정보</CardTitle>
@@ -148,10 +276,7 @@ const ContractCreate = () => {
                     type="number"
                     value={formData.guest_count}
                     onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        guest_count: parseInt(e.target.value),
-                      })
+                      handleGuestCountChange(parseInt(e.target.value))
                     }
                     required
                   />

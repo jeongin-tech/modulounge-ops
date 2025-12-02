@@ -64,10 +64,15 @@ const ContractsManage = () => {
               계약서를 생성하고 고객에게 전송하세요
             </p>
           </div>
-          <Button onClick={() => navigate("/contracts/create")}>
-            <Plus className="mr-2 h-4 w-4" />
-            새 계약서 작성
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate("/contracts/templates")}>
+              템플릿 관리
+            </Button>
+            <Button onClick={() => navigate("/contracts/create")}>
+              <Plus className="mr-2 h-4 w-4" />
+              새 계약서 작성
+            </Button>
+          </div>
         </div>
 
         {loading ? (
