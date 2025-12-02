@@ -1,4 +1,108 @@
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
+import { ko } from "date-fns/locale";
+
+interface Contract {
+  location: string;
+  reservation_date: string;
+  checkin_time: string;
+  checkout_time: string;
+  guest_count: number;
+  base_price: number;
+  additional_price: number;
+  cleaning_fee: number;
+  vat: number;
+  total_amount: number;
+  purpose: string | null;
+  customer_name: string | null;
+  company_name: string | null;
+  phone_number: string | null;
+  tax_invoice_requested: boolean | null;
+  visit_source: string | null;
+}
+
 const ContractResponse = () => {
+  const { token } = useParams<{ token: string }>();
+  const [contract, setContract] = useState<Contract | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchContract = async () => {
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("contracts")
+        .select("*")
+        .eq("access_token", token)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error fetching contract:", error);
+      } else {
+        setContract(data);
+      }
+      setLoading(false);
+    };
+
+    fetchContract();
+  }, [token]);
+
+  if (loading) {
+    return (
+      <div style={{ 
+        minHeight: '100vh', 
+        backgroundColor: 'white', 
+        padding: '40px',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        fontSize: '18px'
+      }}>
+        로딩 중...
+      </div>
+    );
+  }
+
+  if (!contract) {
+    return (
+      <div style={{ 
+        minHeight: '100vh', 
+        backgroundColor: 'white', 
+        padding: '40px',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        fontSize: '18px',
+        color: '#666'
+      }}>
+        계약서를 찾을 수 없습니다.
+      </div>
+    );
+  }
+
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return format(date, "M월 d일 (EEEE)", { locale: ko });
+    } catch {
+      return dateString;
+    }
+  };
+
+  const formatTime = (timeString: string) => {
+    // timeString format: "HH:MM:SS"
+    return timeString.slice(0, 5); // "HH:MM"
+  };
+
+  const formatCurrency = (amount: number) => {
+    return amount.toLocaleString('ko-KR');
+  };
+
   return (
     <div style={{ 
       minHeight: '100vh', 
@@ -61,40 +165,47 @@ const ContractResponse = () => {
           <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>■ 예약 정보</h2>
           <div style={{ fontSize: '15px', color: '#333', lineHeight: '1.8' }}>
             <p style={{ marginBottom: '8px' }}>1) 예약호실</p>
-            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>모드라운지 역삼점</p>
+            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>{contract.location}</p>
             <p style={{ marginBottom: '8px' }}>2) 예약 날짜</p>
-            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>12월 12일 (금요일)</p>
+            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>{formatDate(contract.reservation_date)}</p>
             <p style={{ marginBottom: '8px' }}>3) 입실 시간 (준비 포함)</p>
-            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>09:00</p>
+            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>{formatTime(contract.checkin_time)}</p>
             <p style={{ marginBottom: '8px' }}>4) 퇴실 시간 (정리 포함)</p>
-            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>16:30</p>
+            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>{formatTime(contract.checkout_time)}</p>
             <p style={{ marginBottom: '8px' }}>5) 이용 인원</p>
-            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>35명</p>
+            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>{contract.guest_count}명</p>
             <p style={{ marginBottom: '8px' }}>6) 이용 목적</p>
-            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>(작성)</p>
+            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>{contract.purpose || "(작성)"}</p>
           </div>
         </div>
 
         <div style={{ marginBottom: '30px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>■ 이용 요금</h2>
           <div style={{ fontSize: '15px', color: '#333', lineHeight: '1.8' }}>
-            <p style={{ marginBottom: '8px' }}>기본 이용료(10인 기준): 340,000원</p>
-            <p style={{ marginBottom: '8px' }}>인원 추가: 250,000원</p>
-            <p style={{ marginBottom: '8px' }}>청소대행: 150,000원</p>
-            <p style={{ marginBottom: '8px' }}>부가세: 74,000원</p>
-            <p style={{ marginTop: '15px', fontWeight: 'bold', fontSize: '16px' }}>▶ 총 입금 금액: 814,000원</p>
+            <p style={{ marginBottom: '8px' }}>기본 이용료(10인 기준): {formatCurrency(contract.base_price)}원</p>
+            <p style={{ marginBottom: '8px' }}>인원 추가: {formatCurrency(contract.additional_price)}원</p>
+            <p style={{ marginBottom: '8px' }}>청소대행: {formatCurrency(contract.cleaning_fee)}원</p>
+            <p style={{ marginBottom: '8px' }}>부가세: {formatCurrency(contract.vat)}원</p>
+            <p style={{ marginTop: '15px', fontWeight: 'bold', fontSize: '16px' }}>▶ 총 입금 금액: {formatCurrency(contract.total_amount)}원</p>
           </div>
         </div>
 
         <div style={{ marginBottom: '30px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>■ 증빙 발행 요청</h2>
-          <p style={{ fontSize: '15px', color: '#333' }}>세금계산서 또는 현금영수증 요청: ( Y / N )</p>
+          <p style={{ fontSize: '15px', color: '#333' }}>
+            세금계산서 또는 현금영수증 요청: {contract.tax_invoice_requested ? "Y" : "N"}
+          </p>
         </div>
 
         <div style={{ marginBottom: '30px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>■ 방문 경로</h2>
           <p style={{ fontSize: '15px', color: '#333', marginBottom: '8px' }}>저희 공간을 어떤 경로를 통해 알게 되셨나요?</p>
           <p style={{ fontSize: '15px', color: '#333' }}>검색어 포함하여 작성해 주세요.</p>
+          {contract.visit_source && (
+            <p style={{ fontSize: '15px', color: '#333', marginTop: '10px', paddingLeft: '20px' }}>
+              {contract.visit_source}
+            </p>
+          )}
         </div>
 
         <div style={{ marginBottom: '30px' }}>
@@ -114,11 +225,11 @@ const ContractResponse = () => {
             <p style={{ marginBottom: '8px' }}>1) 유의사항 및 환불 규정에 동의하시나요?</p>
             <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>동의합니다 (서명 또는 체크)</p>
             <p style={{ marginBottom: '8px' }}>2) 예약자 성함</p>
-            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>(작성)</p>
+            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>{contract.customer_name || "(작성)"}</p>
             <p style={{ marginBottom: '8px' }}>3) 기업 대관 시 기업명 & 위치</p>
-            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>(해당 시 작성)</p>
+            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>{contract.company_name || "(해당 시 작성)"}</p>
             <p style={{ marginBottom: '8px' }}>4) 핸드폰 번호</p>
-            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>(작성)</p>
+            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>{contract.phone_number || "(작성)"}</p>
           </div>
         </div>
       </div>
