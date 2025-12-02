@@ -502,6 +502,94 @@ export type Database = {
           },
         ]
       }
+      pricing_rule_groups: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_rule_groups_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pricing_rules: {
+        Row: {
+          condition: Json | null
+          created_at: string
+          group_id: string
+          id: string
+          is_active: boolean
+          is_percentage: boolean
+          name: string
+          price: number
+          priority: number
+          rule_type: string
+          updated_at: string
+        }
+        Insert: {
+          condition?: Json | null
+          created_at?: string
+          group_id: string
+          id?: string
+          is_active?: boolean
+          is_percentage?: boolean
+          name: string
+          price?: number
+          priority?: number
+          rule_type: string
+          updated_at?: string
+        }
+        Update: {
+          condition?: Json | null
+          created_at?: string
+          group_id?: string
+          id?: string
+          is_active?: boolean
+          is_percentage?: boolean
+          name?: string
+          price?: number
+          priority?: number
+          rule_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_rules_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_rule_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           business_registration_number: string | null
