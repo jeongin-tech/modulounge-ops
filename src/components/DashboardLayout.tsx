@@ -18,6 +18,7 @@ import {
   FileSignature,
   FileText,
   Search,
+  BookOpen,
 } from "lucide-react";
 import logo from "@/assets/logo.jpg";
 import { toast } from "sonner";
@@ -164,6 +165,12 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
       icon: <MessageSquare className="h-5 w-5" />,
       label: "C/S",
       path: "/messages",
+      roles: ["STAFF", "PARTNER"],
+    },
+    {
+      icon: <BookOpen className="h-5 w-5" />,
+      label: "사용가이드",
+      path: "/guide",
       roles: ["STAFF", "PARTNER"],
     },
     {
