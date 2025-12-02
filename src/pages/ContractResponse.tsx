@@ -74,12 +74,17 @@ const ContractResponse = () => {
   });
 
   useEffect(() => {
+    if (!token) {
+      setLoading(false);
+      toast.error("잘못된 접근입니다.");
+      return;
+    }
     fetchContract();
   }, [token]);
 
   const fetchContract = async () => {
     try {
-      console.log("Fetching contract with token:", token);
+      // anon 키로 직접 요청
       const { data, error } = await supabase
         .from("contracts")
         .select(`
@@ -94,7 +99,6 @@ const ContractResponse = () => {
         .eq("access_token", token)
         .maybeSingle();
 
-      console.log("Contract fetch result:", { data, error });
       if (error) {
         console.error("Contract fetch error:", error);
         throw error;
@@ -114,7 +118,7 @@ const ContractResponse = () => {
       setContract(data);
     } catch (error) {
       console.error("계약서 조회 오류:", error);
-      toast.error("계약서를 찾을 수 없습니다.");
+      toast.error("계약서를 불러오는데 실패했습니다.");
     } finally {
       setLoading(false);
     }
@@ -248,23 +252,28 @@ const ContractResponse = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">로딩 중...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-lg text-muted-foreground">계약서를 불러오는 중...</p>
       </div>
     );
   }
 
   if (!contract) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">계약서를 찾을 수 없습니다.</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Card className="max-w-md w-full mx-4">
+          <CardContent className="pt-6 text-center">
+            <p className="text-lg text-muted-foreground">계약서를 찾을 수 없습니다.</p>
+            <p className="text-sm text-muted-foreground mt-2">링크를 다시 확인해주세요.</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (contract.submitted_at) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center space-y-4">
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
@@ -396,7 +405,7 @@ const ContractResponse = () => {
               <div className="space-y-2 text-sm">
                 {contract.contract_templates?.pricing_items && 
                  Array.isArray(contract.contract_templates.pricing_items) ? (
-                  contract.contract_templates.pricing_items.map((item, idx) => {
+                  contract.contract_templates.pricing_items.map((item: any, idx: number) => {
                     const fieldMap: Record<string, number> = {
                       base_price: contract.base_price,
                       additional_price: contract.additional_price,
