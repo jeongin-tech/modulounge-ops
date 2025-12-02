@@ -84,6 +84,8 @@ const ContractResponse = () => {
 
   const fetchContract = async () => {
     try {
+      console.log("🔍 Fetching contract with token:", token);
+      
       // anon 키로 직접 요청
       const { data, error } = await supabase
         .from("contracts")
@@ -99,27 +101,33 @@ const ContractResponse = () => {
         .eq("access_token", token)
         .maybeSingle();
 
+      console.log("📦 Contract fetch result:", { data, error });
+
       if (error) {
-        console.error("Contract fetch error:", error);
-        throw error;
+        console.error("❌ Contract fetch error:", error);
+        toast.error(`오류: ${error.message}`);
+        setLoading(false);
+        return;
       }
       
       if (!data) {
+        console.log("⚠️ No contract found");
         toast.error("계약서를 찾을 수 없습니다.");
         setContract(null);
         setLoading(false);
         return;
       }
       
+      console.log("✅ Contract loaded successfully");
       if (data.submitted_at) {
         toast.info("이미 제출된 계약서입니다.");
       }
       
       setContract(data);
-    } catch (error) {
-      console.error("계약서 조회 오류:", error);
-      toast.error("계약서를 불러오는데 실패했습니다.");
-    } finally {
+      setLoading(false);
+    } catch (error: any) {
+      console.error("💥 계약서 조회 오류:", error);
+      toast.error(`계약서를 불러오는데 실패했습니다: ${error.message || '알 수 없는 오류'}`);
       setLoading(false);
     }
   };
