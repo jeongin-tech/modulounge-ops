@@ -1,190 +1,313 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { toast } from "sonner";
+import { CheckCircle, Download } from "lucide-react";
+import { format } from "date-fns";
+import logo from "@/assets/logo.jpg";
+import lounge1 from "@/assets/lounge-1.png";
+import lounge2 from "@/assets/lounge-2.png";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+
+const LOUNGE_IMAGE_MAP: Record<string, string> = {
+  "lounge-1": lounge1,
+  "lounge-2": lounge2,
+};
 
 const ContractResponse = () => {
   const { token } = useParams();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const contractRef = useRef<HTMLDivElement>(null);
   const [contract, setContract] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [formData, setFormData] = useState({
+    customer_name: "",
+    company_name: "",
+    phone_number: "",
+    visit_source: "",
+    tax_invoice_requested: false,
+    agreed: false,
+  });
 
   useEffect(() => {
     if (!token) {
-      setError("토큰이 없습니다");
+      toast.error("잘못된 접근입니다.");
       setLoading(false);
       return;
     }
-
-    const fetchContract = async () => {
-      try {
-        const { data, error: fetchError } = await supabase
-          .from("contracts")
-          .select("*")
-          .eq("access_token", token)
-          .maybeSingle();
-
-        if (fetchError) {
-          console.error("Fetch error:", fetchError);
-          setError(`데이터베이스 오류: ${fetchError.message}`);
-          setLoading(false);
-          return;
-        }
-
-        if (!data) {
-          setError("계약서를 찾을 수 없습니다");
-          setLoading(false);
-          return;
-        }
-
-        setContract(data);
-        setLoading(false);
-      } catch (err: any) {
-        console.error("Exception:", err);
-        setError(`오류 발생: ${err.message}`);
-        setLoading(false);
-      }
-    };
-
     fetchContract();
   }, [token]);
 
-  if (loading) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f5f5f5'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <h2 style={{ fontSize: '24px', marginBottom: '10px' }}>로딩 중...</h2>
-          <p style={{ color: '#666' }}>계약서를 불러오고 있습니다</p>
-        </div>
-      </div>
-    );
-  }
+  const fetchContract = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("contracts")
+        .select(`*,contract_templates(terms_content,refund_policy,image_urls,pricing_items)`)
+        .eq("access_token", token)
+        .maybeSingle();
 
-  if (error) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f5f5f5',
-        padding: '20px'
-      }}>
-        <div style={{
-          backgroundColor: 'white',
-          padding: '40px',
-          borderRadius: '8px',
-          maxWidth: '600px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-        }}>
-          <h2 style={{ fontSize: '24px', marginBottom: '10px', color: '#dc2626' }}>
-            오류
-          </h2>
-          <p style={{ color: '#666', marginBottom: '20px' }}>{error}</p>
-          <p style={{ fontSize: '14px', color: '#999' }}>
-            토큰: {token}
-          </p>
-        </div>
-      </div>
-    );
+      if (error || !data) {
+        toast.error("계약서를 찾을 수 없습니다.");
+        setLoading(false);
+        return;
+      }
+      
+      setContract(data);
+      setLoading(false);
+    } catch (error: any) {
+      toast.error("계약서를 불러오는데 실패했습니다.");
+      setLoading(false);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!contractRef.current || !contract) return;
+    setDownloading(true);
+    try {
+      const canvas = await html2canvas(contractRef.current, { scale: 2, useCORS: true });
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const ratio = Math.min(pdfWidth / canvas.width, pdfHeight / canvas.height);
+      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, canvas.width * ratio, canvas.height * ratio);
+      pdf.save(`모드라운지_계약서_${format(new Date(), "yyyyMMdd")}.pdf`);
+      toast.success("PDF 다운로드 완료!");
+    } catch (error) {
+      toast.error("PDF 생성 실패");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const startDrawing = (e: any) => {
+    setIsDrawing(true);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
+
+  const draw = (e: any) => {
+    if (!isDrawing) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  };
+
+  const stopDrawing = () => setIsDrawing(false);
+
+  const clearSignature = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.agreed) {
+      toast.error("유의사항 및 환불 규정에 동의해주세요.");
+      return;
+    }
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    setSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from("contracts")
+        .update({
+          customer_name: formData.customer_name,
+          company_name: formData.company_name || null,
+          phone_number: formData.phone_number,
+          visit_source: formData.visit_source,
+          tax_invoice_requested: formData.tax_invoice_requested,
+          agreed: formData.agreed,
+          signature_data: canvas.toDataURL(),
+          submitted_at: new Date().toISOString(),
+        })
+        .eq("access_token", token);
+
+      if (error) throw error;
+      toast.success("계약서가 제출되었습니다!");
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (error) {
+      toast.error("제출에 실패했습니다.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center bg-background"><p className="text-lg">로딩 중...</p></div>;
   }
 
   if (!contract) {
+    return <div className="min-h-screen flex items-center justify-center bg-background"><Card className="max-w-md w-full mx-4"><CardContent className="pt-6 text-center"><p>계약서를 찾을 수 없습니다.</p></CardContent></Card></div>;
+  }
+
+  if (contract.submitted_at) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f5f5f5'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <h2 style={{ fontSize: '24px' }}>계약서를 찾을 수 없습니다</h2>
-        </div>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+        <Card className="max-w-md w-full">
+          <CardContent className="pt-6 text-center space-y-4">
+            <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
+            <h2 className="text-2xl font-bold">계약서가 제출되었습니다</h2>
+            <p className="text-muted-foreground">{format(new Date(contract.submitted_at), "yyyy-MM-dd HH:mm")}에 제출됨</p>
+            <Button onClick={handleDownloadPDF} disabled={downloading} className="w-full">
+              <Download className="mr-2 h-4 w-4" />{downloading ? "PDF 생성 중..." : "계약서 PDF 다운로드"}
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
+  const displayImages = contract.contract_templates?.image_urls && Array.isArray(contract.contract_templates.image_urls) && contract.contract_templates.image_urls.length > 0 ? contract.contract_templates.image_urls : ["lounge-1", "lounge-2"];
+
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: '#f5f5f5',
-      padding: '40px 20px'
-    }}>
-      <div style={{
-        maxWidth: '800px',
-        margin: '0 auto',
-        backgroundColor: 'white',
-        padding: '40px',
-        borderRadius: '8px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-      }}>
-        <h1 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '30px', textAlign: 'center' }}>
-          모드라운지 계약서
-        </h1>
-
-        <div style={{ marginBottom: '30px', padding: '20px', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '15px' }}>
-            예약 정보
-          </h2>
-          <div style={{ lineHeight: '1.8' }}>
-            <p><strong>예약 장소:</strong> {contract.location}</p>
-            <p><strong>예약 날짜:</strong> {contract.reservation_date}</p>
-            <p><strong>입실 시간:</strong> {contract.checkin_time}</p>
-            <p><strong>퇴실 시간:</strong> {contract.checkout_time}</p>
-            <p><strong>인원:</strong> {contract.guest_count}명</p>
-          </div>
+    <div className="min-h-screen bg-background">
+      <div ref={contractRef} className="max-w-2xl mx-auto p-4 md:p-8 space-y-8">
+        <div className="text-center space-y-4">
+          <img src={logo} alt="모드라운지" className="h-16 w-16 mx-auto rounded-full" />
+          <h1 className="text-3xl md:text-4xl font-bold text-primary">모드라운지 계약서</h1>
+          <p className="text-muted-foreground">모드라운지는 무인 운영되는 공간입니다.</p>
         </div>
 
-        <div style={{ marginBottom: '30px', padding: '20px', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '15px' }}>
-            이용 요금
-          </h2>
-          <div style={{ lineHeight: '1.8' }}>
-            <p>기본 이용료: {contract.base_price.toLocaleString()}원</p>
-            <p>인원 추가: {contract.additional_price.toLocaleString()}원</p>
-            <p>청소비: {contract.cleaning_fee.toLocaleString()}원</p>
-            <p>부가세: {contract.vat.toLocaleString()}원</p>
-            <p style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '15px', color: '#2563eb' }}>
-              총 금액: {contract.total_amount.toLocaleString()}원
-            </p>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {displayImages.map((imageId: string, idx: number) => {
+            const imageSrc = LOUNGE_IMAGE_MAP[imageId];
+            return imageSrc ? <img key={idx} src={imageSrc} alt={`모드라운지 ${idx + 1}`} className="rounded-lg w-full object-cover h-48" /> : null;
+          })}
         </div>
 
-        {contract.submitted_at ? (
-          <div style={{
-            padding: '20px',
-            backgroundColor: '#dcfce7',
-            borderRadius: '8px',
-            textAlign: 'center'
-          }}>
-            <p style={{ fontSize: '18px', fontWeight: 'bold', color: '#16a34a' }}>
-              ✓ 계약서가 제출되었습니다
-            </p>
-            <p style={{ marginTop: '10px', color: '#666' }}>
-              제출일: {new Date(contract.submitted_at).toLocaleString('ko-KR')}
-            </p>
-          </div>
-        ) : (
-          <div style={{
-            padding: '20px',
-            backgroundColor: '#fef3c7',
-            borderRadius: '8px',
-            textAlign: 'center'
-          }}>
-            <p style={{ fontSize: '18px', fontWeight: 'bold', color: '#ca8a04' }}>
-              ⚠ 계약서 작성이 필요합니다
-            </p>
-            <p style={{ marginTop: '10px', color: '#666' }}>
-              고객 정보를 입력하고 계약서를 제출해주세요.
-            </p>
-          </div>
-        )}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <Card>
+            <CardContent className="pt-6 space-y-4 text-sm">
+              <div>
+                <h3 className="font-bold text-lg mb-2">■ 이용 유의사항</h3>
+                <div className="text-muted-foreground whitespace-pre-line">
+                  {contract.contract_templates?.terms_content || `• 벽면에 테이프·접착제 부착 금지\n• 토사물 발생 시 청소비 10만 원 부과\n• 전 구역 흡연 금지`}
+                </div>
+              </div>
+              <div>
+                <h3 className="font-bold text-lg mb-2">■ 환불 규정</h3>
+                <div className="text-muted-foreground whitespace-pre-line">
+                  {contract.contract_templates?.refund_policy || `• 결제 완료 ~ 이용일 8일 전: 80% 환불\n• 이용일 7일 전 ~ 당일: 환불 불가`}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6 space-y-4">
+              <h3 className="font-bold text-lg">■ 예약 정보</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div><p className="text-muted-foreground">예약호실</p><p className="font-medium">{contract.location}</p></div>
+                <div><p className="text-muted-foreground">예약 날짜</p><p className="font-medium">{contract.reservation_date}</p></div>
+                <div><p className="text-muted-foreground">입실 시간</p><p className="font-medium">{contract.checkin_time}</p></div>
+                <div><p className="text-muted-foreground">퇴실 시간</p><p className="font-medium">{contract.checkout_time}</p></div>
+                <div><p className="text-muted-foreground">이용 인원</p><p className="font-medium">{contract.guest_count}명</p></div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6 space-y-2">
+              <h3 className="font-bold text-lg mb-4">■ 이용 요금</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">기본 이용료</span><span className="font-medium">{contract.base_price.toLocaleString()}원</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">인원 추가</span><span className="font-medium">{contract.additional_price.toLocaleString()}원</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">청소비</span><span className="font-medium">{contract.cleaning_fee.toLocaleString()}원</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">부가세</span><span className="font-medium">{contract.vat.toLocaleString()}원</span></div>
+                <div className="pt-2 border-t flex justify-between text-lg">
+                  <span className="font-bold">▶ 총 입금 금액</span>
+                  <span className="font-bold text-primary">{contract.total_amount.toLocaleString()}원</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6 space-y-4">
+              <h3 className="font-bold text-lg">■ 고객 정보 입력</h3>
+              
+              <div className="space-y-2">
+                <Label htmlFor="tax_invoice">증빙 발행 요청</Label>
+                <RadioGroup value={formData.tax_invoice_requested ? "Y" : "N"} onValueChange={(v) => setFormData({ ...formData, tax_invoice_requested: v === "Y" })}>
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Y" id="tax-yes" />
+                      <Label htmlFor="tax-yes">예</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="N" id="tax-no" />
+                      <Label htmlFor="tax-no">아니오</Label>
+                    </div>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="visit_source">방문 경로</Label>
+                <Textarea id="visit_source" value={formData.visit_source} onChange={(e) => setFormData({ ...formData, visit_source: e.target.value })} placeholder="어떤 경로로 알게 되셨나요?" required />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="customer_name">예약자 성함 *</Label>
+                <Input id="customer_name" value={formData.customer_name} onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })} required />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="company_name">기업 대관 시 기업명</Label>
+                <Input id="company_name" value={formData.company_name} onChange={(e) => setFormData({ ...formData, company_name: e.target.value })} placeholder="해당 시 작성" />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone_number">핸드폰 번호 *</Label>
+                <Input id="phone_number" value={formData.phone_number} onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })} placeholder="010-0000-0000" required />
+              </div>
+
+              <div className="space-y-2">
+                <Label>서명 *</Label>
+                <div className="border rounded-md p-2 bg-white">
+                  <canvas ref={canvasRef} width={400} height={200} className="w-full border rounded cursor-crosshair touch-none" onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={stopDrawing} onMouseLeave={stopDrawing} onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={stopDrawing} />
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={clearSignature}>서명 지우기</Button>
+              </div>
+
+              <div className="flex items-start space-x-2">
+                <Checkbox id="agreed" checked={formData.agreed} onCheckedChange={(checked) => setFormData({ ...formData, agreed: checked as boolean })} />
+                <Label htmlFor="agreed" className="text-sm">위 유의사항 및 환불 규정을 확인했으며 이에 동의합니다. *</Label>
+              </div>
+
+              <Button type="submit" className="w-full" size="lg" disabled={submitting}>{submitting ? "제출 중..." : "계약서 제출하기"}</Button>
+            </CardContent>
+          </Card>
+        </form>
       </div>
     </div>
   );
