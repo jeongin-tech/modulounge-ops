@@ -130,6 +130,95 @@ export type Database = {
           },
         ]
       }
+      contracts: {
+        Row: {
+          access_token: string
+          additional_price: number
+          agreed: boolean | null
+          base_price: number
+          checkin_time: string
+          checkout_time: string
+          cleaning_fee: number
+          company_name: string | null
+          created_at: string
+          created_by: string
+          customer_name: string | null
+          guest_count: number
+          id: string
+          location: string
+          phone_number: string | null
+          purpose: string | null
+          reservation_date: string
+          signature_data: string | null
+          submitted_at: string | null
+          tax_invoice_requested: boolean | null
+          total_amount: number
+          updated_at: string
+          vat: number
+          visit_source: string | null
+        }
+        Insert: {
+          access_token?: string
+          additional_price?: number
+          agreed?: boolean | null
+          base_price?: number
+          checkin_time: string
+          checkout_time: string
+          cleaning_fee?: number
+          company_name?: string | null
+          created_at?: string
+          created_by: string
+          customer_name?: string | null
+          guest_count: number
+          id?: string
+          location: string
+          phone_number?: string | null
+          purpose?: string | null
+          reservation_date: string
+          signature_data?: string | null
+          submitted_at?: string | null
+          tax_invoice_requested?: boolean | null
+          total_amount?: number
+          updated_at?: string
+          vat?: number
+          visit_source?: string | null
+        }
+        Update: {
+          access_token?: string
+          additional_price?: number
+          agreed?: boolean | null
+          base_price?: number
+          checkin_time?: string
+          checkout_time?: string
+          cleaning_fee?: number
+          company_name?: string | null
+          created_at?: string
+          created_by?: string
+          customer_name?: string | null
+          guest_count?: number
+          id?: string
+          location?: string
+          phone_number?: string | null
+          purpose?: string | null
+          reservation_date?: string
+          signature_data?: string | null
+          submitted_at?: string | null
+          tax_invoice_requested?: boolean | null
+          total_amount?: number
+          updated_at?: string
+          vat?: number
+          visit_source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           created_at: string

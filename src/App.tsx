@@ -16,6 +16,9 @@ import Partners from "./pages/Partners";
 import Users from "./pages/Users";
 import Messages from "./pages/Messages";
 import Settings from "./pages/Settings";
+import ContractsManage from "./pages/ContractsManage";
+import ContractCreate from "./pages/ContractCreate";
+import ContractResponse from "./pages/ContractResponse";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +41,9 @@ const App = () => (
           <Route path="/settlements/manage" element={<SettlementsManage />} />
           <Route path="/partners" element={<Partners />} />
           <Route path="/users" element={<Users />} />
+          <Route path="/contracts" element={<ContractsManage />} />
+          <Route path="/contracts/create" element={<ContractCreate />} />
+          <Route path="/contract/:token" element={<ContractResponse />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

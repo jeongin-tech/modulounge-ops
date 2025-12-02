@@ -15,6 +15,7 @@ import {
   LogOut,
   Menu,
   X,
+  FileSignature,
 } from "lucide-react";
 import logo from "@/assets/logo.jpg";
 import { toast } from "sonner";
@@ -137,6 +138,12 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
       icon: <Users className="h-5 w-5" />,
       label: "사용자 관리",
       path: "/users",
+      roles: ["STAFF"],
+    },
+    {
+      icon: <FileSignature className="h-5 w-5" />,
+      label: "전자서명관리",
+      path: "/contracts",
       roles: ["STAFF"],
     },
     {
