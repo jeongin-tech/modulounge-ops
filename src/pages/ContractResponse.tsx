@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { toast } from "sonner";
+import companyStamp from "@/assets/company-stamp.png";
 
 interface Contract {
   location: string;
@@ -306,6 +307,26 @@ const ContractResponse = () => {
             <p style={{ marginBottom: '8px' }}>청소대행: {formatCurrency(contract.cleaning_fee)}원</p>
             <p style={{ marginBottom: '8px' }}>부가세: {formatCurrency(contract.vat)}원</p>
             <p style={{ marginTop: '15px', fontWeight: 'bold', fontSize: '16px' }}>▶ 총 입금 금액: {formatCurrency(contract.total_amount)}원</p>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '30px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>■ 공급하는 자</h2>
+          <div style={{ fontSize: '15px', color: '#333', lineHeight: '1.8' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '20px', marginBottom: '15px' }}>
+              <p style={{ fontWeight: 'bold', fontSize: '17px' }}>주식회사 모드파티</p>
+              <img 
+                src={companyStamp} 
+                alt="모드파티 직인" 
+                style={{ width: '60px', height: '60px', objectFit: 'contain' }}
+              />
+            </div>
+            <p style={{ marginBottom: '5px' }}>대표자: 이대로</p>
+            <p style={{ marginBottom: '5px' }}>사업자번호: 611-88-01898</p>
+            <p style={{ marginBottom: '5px' }}>전화: 070-4138-1898</p>
+            <p style={{ marginBottom: '5px' }}>메일: modwotjr@modparty.co.kr</p>
+            <p style={{ marginBottom: '5px' }}>웹: <a href="https://modlounge.co.kr" target="_blank" rel="noopener noreferrer" style={{ color: '#0066cc' }}>https://modlounge.co.kr</a></p>
+            <p style={{ marginBottom: '5px' }}>주소: 서울시 강남구 테헤란로22길 11 지하1층</p>
           </div>
         </div>
 
