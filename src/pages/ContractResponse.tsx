@@ -11,15 +11,16 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { CheckCircle, Download } from "lucide-react";
 import { format } from "date-fns";
-import logo from "@/assets/logo.jpg";
-import lounge1 from "@/assets/lounge-1.png";
-import lounge2 from "@/assets/lounge-2.png";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
+import logoImg from "@/assets/logo.jpg";
+import lounge1Img from "@/assets/lounge-1.png";
+import lounge2Img from "@/assets/lounge-2.png";
+
 const LOUNGE_IMAGE_MAP: Record<string, string> = {
-  "lounge-1": lounge1,
-  "lounge-2": lounge2,
+  "lounge-1": lounge1Img,
+  "lounge-2": lounge2Img,
 };
 
 const ContractResponse = () => {
@@ -192,7 +193,7 @@ const ContractResponse = () => {
     <div className="min-h-screen bg-background">
       <div ref={contractRef} className="max-w-2xl mx-auto p-4 md:p-8 space-y-8">
         <div className="text-center space-y-4">
-          <img src={logo} alt="모드라운지" className="h-16 w-16 mx-auto rounded-full" />
+          <img src={logoImg} alt="모드라운지" className="h-16 w-16 mx-auto rounded-full" />
           <h1 className="text-3xl md:text-4xl font-bold text-primary">모드라운지 계약서</h1>
           <p className="text-muted-foreground">모드라운지는 무인 운영되는 공간입니다.</p>
         </div>
