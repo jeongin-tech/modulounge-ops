@@ -79,6 +79,7 @@ const ContractResponse = () => {
 
   const fetchContract = async () => {
     try {
+      console.log("Fetching contract with token:", token);
       const { data, error } = await supabase
         .from("contracts")
         .select(`
@@ -93,7 +94,11 @@ const ContractResponse = () => {
         .eq("access_token", token)
         .maybeSingle();
 
-      if (error) throw error;
+      console.log("Contract fetch result:", { data, error });
+      if (error) {
+        console.error("Contract fetch error:", error);
+        throw error;
+      }
       
       if (!data) {
         toast.error("계약서를 찾을 수 없습니다.");
