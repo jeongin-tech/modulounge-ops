@@ -18,10 +18,9 @@ import Messages from "./pages/Messages";
 import Settings from "./pages/Settings";
 import ContractsManage from "./pages/ContractsManage";
 import ContractCreate from "./pages/ContractCreate";
-import ContractResponse from "./pages/ContractResponse";
+import ContractResponseSimple from "./pages/ContractResponseSimple";
 import ContractTemplates from "./pages/ContractTemplates";
 import ContractTemplateForm from "./pages/ContractTemplateForm";
-import TestPage from "./pages/TestPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,8 +48,7 @@ const App = () => (
           <Route path="/contracts/templates" element={<ContractTemplates />} />
           <Route path="/contracts/templates/create" element={<ContractTemplateForm />} />
           <Route path="/contracts/templates/edit/:id" element={<ContractTemplateForm />} />
-          <Route path="/contract/:token" element={<ContractResponse />} />
-          <Route path="/test" element={<TestPage />} />
+          <Route path="/contract/:token" element={<ContractResponseSimple />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
