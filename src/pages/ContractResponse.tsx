@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,12 +9,31 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { CheckCircle, ChevronRight, Download } from "lucide-react";
+import { CheckCircle, Download } from "lucide-react";
 import { format } from "date-fns";
-import { loungeImages } from "@/lib/loungeImages";
 import logo from "@/assets/logo.jpg";
+import lounge1 from "@/assets/lounge-1.png";
+import lounge2 from "@/assets/lounge-2.png";
+import lounge3 from "@/assets/lounge-3.png";
+import lounge4 from "@/assets/lounge-4.png";
+import lounge5 from "@/assets/lounge-5.png";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+
+const LOUNGE_IMAGE_MAP: Record<string, string> = {
+  "lounge-1": lounge1,
+  "lounge-2": lounge2,
+  "lounge-3": lounge3,
+  "lounge-4": lounge4,
+  "lounge-5": lounge5,
+};
+
+interface ContractTemplate {
+  terms_content: string;
+  refund_policy: string;
+  image_urls: any;
+  pricing_items: any;
+}
 
 interface Contract {
   id: string;
@@ -29,27 +48,22 @@ interface Contract {
   cleaning_fee: number;
   vat: number;
   total_amount: number;
+  customer_name: string | null;
   agreed: boolean;
   submitted_at: string | null;
   template_id: string | null;
-  contract_templates: {
-    terms_content: string;
-    refund_policy: string;
-    image_urls: any;
-    pricing_items: any;
-  } | null;
+  contract_templates: ContractTemplate | null;
 }
 
 const ContractResponse = () => {
   const { token } = useParams();
-  const navigate = useNavigate();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const contractRef = useRef<HTMLDivElement>(null);
   const [contract, setContract] = useState<Contract | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [isDrawing, setIsDrawing] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [isDrawing, setIsDrawing] = useState(false);
   const [formData, setFormData] = useState({
     customer_name: "",
     company_name: "",
@@ -91,6 +105,44 @@ const ContractResponse = () => {
       toast.error("계약서를 찾을 수 없습니다.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!contractRef.current || !contract) return;
+    
+    setDownloading(true);
+    try {
+      const canvas = await html2canvas(contractRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+      
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      const imgX = (pdfWidth - imgWidth * ratio) / 2;
+      const imgY = 0;
+      
+      pdf.addImage(imgData, "PNG", imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+      pdf.save(`모드라운지_계약서_${contract.customer_name || "고객"}_${format(new Date(contract.reservation_date), "yyyyMMdd")}.pdf`);
+      
+      toast.success("PDF 다운로드가 완료되었습니다!");
+    } catch (error) {
+      console.error("PDF 생성 오류:", error);
+      toast.error("PDF 생성에 실패했습니다.");
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -137,44 +189,6 @@ const ContractResponse = () => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-  };
-
-  const handleDownloadPDF = async () => {
-    if (!contractRef.current || !contract) return;
-    
-    setDownloading(true);
-    try {
-      const canvas = await html2canvas(contractRef.current, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-      });
-      
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-      const imgX = (pdfWidth - imgWidth * ratio) / 2;
-      const imgY = 0;
-      
-      pdf.addImage(imgData, "PNG", imgX, imgY, imgWidth * ratio, imgHeight * ratio);
-      pdf.save(`모드라운지_계약서_${contract.customer_name || "고객"}_${format(new Date(contract.reservation_date), "yyyyMMdd")}.pdf`);
-      
-      toast.success("PDF 다운로드가 완료되었습니다!");
-    } catch (error) {
-      console.error("PDF 생성 오류:", error);
-      toast.error("PDF 생성에 실패했습니다.");
-    } finally {
-      setDownloading(false);
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -260,6 +274,12 @@ const ContractResponse = () => {
     );
   }
 
+  const displayImages = contract.contract_templates?.image_urls && 
+    Array.isArray(contract.contract_templates.image_urls) && 
+    contract.contract_templates.image_urls.length > 0 
+    ? contract.contract_templates.image_urls 
+    : ["lounge-1", "lounge-2"];
+
   return (
     <div className="min-h-screen bg-background">
       <div ref={contractRef} className="max-w-2xl mx-auto p-4 md:p-8 space-y-8">
@@ -275,36 +295,19 @@ const ContractResponse = () => {
         </div>
 
         {/* Lounge Images */}
-        {contract.contract_templates?.image_urls && 
-         Array.isArray(contract.contract_templates.image_urls) && 
-         contract.contract_templates.image_urls.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {contract.contract_templates.image_urls.map((imageId: string, idx: number) => {
-              const imageSrc = loungeImages[imageId];
-              return imageSrc ? (
-                <img
-                  key={idx}
-                  src={imageSrc}
-                  alt={`모드라운지 내부 ${idx + 1}`}
-                  className="rounded-lg w-full object-cover h-48"
-                />
-              ) : null;
-            })}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <img
-              src={loungeImages["lounge-1"]}
-              alt="모드라운지 내부"
-              className="rounded-lg w-full object-cover h-48"
-            />
-            <img
-              src={loungeImages["lounge-2"]}
-              alt="모드라운지 내부"
-              className="rounded-lg w-full object-cover h-48"
-            />
-          </div>
-        )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {displayImages.map((imageId: string, idx: number) => {
+            const imageSrc = LOUNGE_IMAGE_MAP[imageId];
+            return imageSrc ? (
+              <img
+                key={idx}
+                src={imageSrc}
+                alt={`모드라운지 내부 ${idx + 1}`}
+                className="rounded-lg w-full object-cover h-48"
+              />
+            ) : null;
+          })}
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Contract Terms */}
@@ -381,7 +384,7 @@ const ContractResponse = () => {
               <div className="space-y-2 text-sm">
                 {contract.contract_templates?.pricing_items && 
                  Array.isArray(contract.contract_templates.pricing_items) ? (
-                  contract.contract_templates.pricing_items.map((item: any, idx: number) => {
+                  contract.contract_templates.pricing_items.map((item, idx) => {
                     const fieldMap: Record<string, number> = {
                       base_price: contract.base_price,
                       additional_price: contract.additional_price,
@@ -516,58 +519,63 @@ const ContractResponse = () => {
                     onTouchMove={draw}
                     onTouchEnd={stopDrawing}
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={clearSignature}
-                    className="mt-2"
-                  >
-                    서명 지우기
-                  </Button>
                 </div>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={clearSignature}
+                >
+                  서명 지우기
+                </Button>
               </div>
 
-              <div className="flex items-start space-x-2 pt-4">
+              <div className="flex items-start space-x-2">
                 <Checkbox
                   id="agreed"
                   checked={formData.agreed}
                   onCheckedChange={(checked) =>
-                    setFormData({ ...formData, agreed: checked === true })
+                    setFormData({ ...formData, agreed: checked as boolean })
                   }
                 />
-                <Label htmlFor="agreed" className="leading-tight cursor-pointer">
-                  유의사항 및 환불 규정에 동의합니다 *
+                <Label htmlFor="agreed" className="text-sm">
+                  위 유의사항 및 환불 규정을 확인했으며 이에 동의합니다. *
                 </Label>
               </div>
+
+              <Button 
+                type="submit" 
+                className="w-full" 
+                size="lg"
+                disabled={submitting}
+              >
+                {submitting ? "제출 중..." : "계약서 제출하기"}
+              </Button>
             </CardContent>
           </Card>
 
-          <Button
-            type="submit"
-            disabled={submitting || !formData.agreed}
-            className="w-full h-14 text-lg"
-            size="lg"
-          >
-            {submitting ? "제출 중..." : "계약서 작성하기"}
-            <ChevronRight className="ml-2 h-5 w-5" />
-          </Button>
+          {/* Registration Info */}
+          <Card className="bg-muted/50">
+            <CardContent className="pt-6 space-y-2 text-sm text-muted-foreground">
+              <p className="font-medium">
+                회원가입 시 다음 혜택을 받을 수 있습니다:
+              </p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>예약 내역 확인 및 관리</li>
+                <li>빠른 재예약 (정보 자동 입력)</li>
+                <li>단골 고객 할인 혜택</li>
+              </ul>
+              <Button
+                type="button"
+                variant="link"
+                className="p-0 h-auto text-primary"
+                onClick={() => window.open("/auth", "_blank")}
+              >
+                회원가입하기 →
+              </Button>
+            </CardContent>
+          </Card>
         </form>
-
-        <div className="text-center text-sm text-muted-foreground">
-          <p>회원가입 안내</p>
-          <p className="mt-1">
-            예약 전일에 발송되는 대관 메시지 수신을 위해 회원가입이 반드시 필요합니다.
-          </p>
-          <a
-            href="https://modlounge.co.kr/site_join_type_choice?back_url=Lw%3D%3D"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary hover:underline mt-2 inline-block"
-          >
-            👉 회원가입 바로가기
-          </a>
-        </div>
       </div>
     </div>
   );

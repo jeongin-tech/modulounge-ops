@@ -4,6 +4,7 @@ import lounge3 from "@/assets/lounge-3.png";
 import lounge4 from "@/assets/lounge-4.png";
 import lounge5 from "@/assets/lounge-5.png";
 
+// Lounge image mapping
 export const loungeImages: Record<string, string> = {
   "lounge-1": lounge1,
   "lounge-2": lounge2,
