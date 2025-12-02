@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Pencil, Trash2, Plus, Link2 } from "lucide-react";
+import { Pencil, Trash2, Plus, Link2, Search } from "lucide-react";
 
 // 대한민국 시도/군구 데이터
 const KOREA_REGIONS = {
@@ -60,10 +60,24 @@ const Users = () => {
   const [currentUserRole, setCurrentUserRole] = useState<"STAFF" | "PARTNER" | null>(null);
   const [slackDialogOpen, setSlackDialogOpen] = useState(false);
   const [editingSlackUser, setEditingSlackUser] = useState<User | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const [slackFormData, setSlackFormData] = useState({
     slack_webhook_url: "",
     slack_channel_id: "",
   });
+
+  // 검색 필터링
+  const filteredUsers = useMemo(() => {
+    if (!searchTerm.trim()) return users;
+    
+    const term = searchTerm.toLowerCase().trim();
+    return users.filter(user => 
+      user.full_name?.toLowerCase().includes(term) ||
+      user.company_name?.toLowerCase().includes(term) ||
+      user.phone?.includes(term) ||
+      user.business_registration_number?.includes(term)
+    );
+  }, [users, searchTerm]);
   
   const [formData, setFormData] = useState({
     email: "",
@@ -582,9 +596,20 @@ const Users = () => {
           </Dialog>
         </div>
 
+        {/* 검색 영역 */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="이름, 업체명, 휴대폰번호, 사업자번호로 검색"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 max-w-md"
+          />
+        </div>
+
         <Card>
           <CardHeader>
-            <CardTitle>전체 사용자 ({users.length}명)</CardTitle>
+            <CardTitle>전체 사용자 ({filteredUsers.length}명)</CardTitle>
             <CardDescription>등록된 모든 사용자 목록</CardDescription>
           </CardHeader>
           <CardContent>
@@ -603,14 +628,14 @@ const Users = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.length === 0 ? (
+                {filteredUsers.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={currentUserRole === "STAFF" ? 9 : 8} className="text-center text-muted-foreground">
-                      등록된 사용자가 없습니다
+                      {searchTerm ? "검색 결과가 없습니다" : "등록된 사용자가 없습니다"}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  users.map((user) => (
+                  filteredUsers.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell className="font-medium">{user.email}</TableCell>
                       <TableCell>{user.full_name}</TableCell>
