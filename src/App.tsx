@@ -21,6 +21,7 @@ import ContractCreate from "./pages/ContractCreate";
 import ContractResponse from "./pages/ContractResponse";
 import ContractTemplates from "./pages/ContractTemplates";
 import ContractTemplateForm from "./pages/ContractTemplateForm";
+import QuoteGenerator from "./pages/QuoteGenerator";
 import TestPage from "./pages/TestPage";
 import NotFound from "./pages/NotFound";
 
@@ -50,6 +51,7 @@ const App = () => (
           <Route path="/contracts/templates/create" element={<ContractTemplateForm />} />
           <Route path="/contracts/templates/edit/:id" element={<ContractTemplateForm />} />
           <Route path="/contract/:token" element={<ContractResponse />} />
+          <Route path="/quote" element={<QuoteGenerator />} />
           <Route path="/test" element={<TestPage />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/settings" element={<Settings />} />
