@@ -1,14 +1,21 @@
-import { useParams } from "react-router-dom";
-
 const ContractResponse = () => {
-  const { token } = useParams();
-
   return (
-    <div className="min-h-screen bg-white p-8">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold mb-4">계약서 페이지 테스트</h1>
-        <p className="text-lg">토큰: {token}</p>
-        <p className="text-lg mt-4">이 페이지가 보인다면 라우팅은 정상입니다.</p>
+    <div style={{ 
+      minHeight: '100vh', 
+      backgroundColor: 'white', 
+      padding: '40px',
+      fontFamily: 'sans-serif'
+    }}>
+      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <h1 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '20px' }}>
+          계약서 페이지
+        </h1>
+        <p style={{ fontSize: '18px', marginBottom: '10px' }}>
+          이 페이지가 보이나요?
+        </p>
+        <p style={{ fontSize: '18px', color: '#666' }}>
+          보인다면 라우팅은 작동합니다.
+        </p>
       </div>
     </div>
   );
