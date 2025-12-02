@@ -33,7 +33,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, ChevronDown, ChevronRight, DollarSign } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronDown, ChevronRight, DollarSign, HelpCircle } from "lucide-react";
 
 interface Profile {
   id: string;
@@ -371,10 +371,106 @@ const PricingManage = () => {
             <h1 className="text-3xl font-bold tracking-tight">제휴업체 가격관리</h1>
             <p className="text-muted-foreground">지점별 요금 규칙을 관리합니다.</p>
           </div>
-          <Button onClick={() => openGroupDialog()}>
-            <Plus className="mr-2 h-4 w-4" />
-            새 요금 그룹
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => openGroupDialog()}>
+              <Plus className="mr-2 h-4 w-4" />
+              새 요금 그룹
+            </Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <HelpCircle className="mr-2 h-4 w-4" />
+                  설정 가이드
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>요금 규칙 설정 가이드</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-6 text-sm">
+                  <section>
+                    <h3 className="font-semibold text-base mb-2">1. 요금 그룹이란?</h3>
+                    <p className="text-muted-foreground">
+                      요금 그룹은 특정 지점이나 시즌에 적용되는 요금 규칙들의 모음입니다.
+                      예: "A지점 성수기 요금", "B지점 비수기 요금"
+                    </p>
+                  </section>
+
+                  <section>
+                    <h3 className="font-semibold text-base mb-2">2. 요금 규칙 설정 방법</h3>
+                    <div className="space-y-3">
+                      <div className="bg-muted p-3 rounded-md">
+                        <p className="font-medium">직영/복잡한 요금 구조</p>
+                        <p className="text-muted-foreground mt-1">
+                          각 상황별로 절대 금액으로 규칙을 설정합니다.
+                        </p>
+                        <ul className="list-disc list-inside mt-2 text-muted-foreground space-y-1">
+                          <li>주말 야간: 500,000원 (기본 30명, 추가인원당 20,000원)</li>
+                          <li>평일 야간: 400,000원 (기본 30명, 추가인원당 15,000원)</li>
+                          <li>데이타임: 300,000원 (기본 30명, 추가인원당 10,000원)</li>
+                        </ul>
+                      </div>
+                      <div className="bg-muted p-3 rounded-md">
+                        <p className="font-medium">제휴 업체 (단순 할인)</p>
+                        <p className="text-muted-foreground mt-1">
+                          퍼센트 옵션을 사용해 간단하게 할인율을 적용합니다.
+                        </p>
+                        <ul className="list-disc list-inside mt-2 text-muted-foreground space-y-1">
+                          <li>제휴 업체 A: -10% 할인</li>
+                          <li>제휴 업체 B: -15% 할인</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section>
+                    <h3 className="font-semibold text-base mb-2">3. 우선순위 설정</h3>
+                    <p className="text-muted-foreground">
+                      여러 규칙이 겹칠 때 <strong>우선순위가 높은 규칙</strong>이 먼저 적용됩니다.
+                    </p>
+                    <div className="bg-muted p-3 rounded-md mt-2">
+                      <p className="text-muted-foreground">예시:</p>
+                      <ul className="list-disc list-inside mt-1 text-muted-foreground space-y-1">
+                        <li>주말 야간 (우선순위: 10) → 먼저 적용</li>
+                        <li>평일 야간 (우선순위: 5)</li>
+                        <li>데이타임 (우선순위: 1) → 나중에 적용</li>
+                      </ul>
+                    </div>
+                  </section>
+
+                  <section>
+                    <h3 className="font-semibold text-base mb-2">4. 조건 설정</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-muted p-3 rounded-md">
+                        <p className="font-medium">요일</p>
+                        <p className="text-muted-foreground text-xs mt-1">
+                          특정 요일에만 적용 (예: 금, 토만 선택)
+                        </p>
+                      </div>
+                      <div className="bg-muted p-3 rounded-md">
+                        <p className="font-medium">월</p>
+                        <p className="text-muted-foreground text-xs mt-1">
+                          특정 월에만 적용 (예: 7, 8월 성수기)
+                        </p>
+                      </div>
+                      <div className="bg-muted p-3 rounded-md">
+                        <p className="font-medium">시간대</p>
+                        <p className="text-muted-foreground text-xs mt-1">
+                          시작/종료 시간 설정 (예: 18:00~06:00)
+                        </p>
+                      </div>
+                      <div className="bg-muted p-3 rounded-md">
+                        <p className="font-medium">인원</p>
+                        <p className="text-muted-foreground text-xs mt-1">
+                          최소/최대 인원 조건 설정
+                        </p>
+                      </div>
+                    </div>
+                  </section>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {loading ? (
