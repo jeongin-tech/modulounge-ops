@@ -33,7 +33,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, ChevronDown, ChevronRight, DollarSign, HelpCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronDown, ChevronRight, ChevronLeft, DollarSign, HelpCircle, Search } from "lucide-react";
 
 interface Profile {
   id: string;
@@ -90,6 +90,9 @@ const PricingManage = () => {
   const [rules, setRules] = useState<Record<string, PricingRule[]>>({});
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   // Group form state
   const [groupDialogOpen, setGroupDialogOpen] = useState(false);
@@ -473,17 +476,52 @@ const PricingManage = () => {
           </div>
         </div>
 
-        {loading ? (
-          <div className="text-center py-12 text-muted-foreground">로딩 중...</div>
-        ) : groups.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center text-muted-foreground">
-              등록된 요금 그룹이 없습니다. 새 요금 그룹을 추가해주세요.
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {groups.map((group) => (
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="업체명 또는 그룹명으로 검색..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="pl-10"
+          />
+        </div>
+
+        {(() => {
+          const filteredGroups = groups.filter((group) => {
+            const searchLower = searchQuery.toLowerCase();
+            const groupName = group.name.toLowerCase();
+            const companyName = (group.profiles?.company_name || group.profiles?.full_name || "").toLowerCase();
+            return groupName.includes(searchLower) || companyName.includes(searchLower);
+          });
+          
+          const totalPages = Math.ceil(filteredGroups.length / ITEMS_PER_PAGE);
+          const paginatedGroups = filteredGroups.slice(
+            (currentPage - 1) * ITEMS_PER_PAGE,
+            currentPage * ITEMS_PER_PAGE
+          );
+
+          if (loading) {
+            return <div className="text-center py-12 text-muted-foreground">로딩 중...</div>;
+          }
+          
+          if (filteredGroups.length === 0) {
+            return (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  {searchQuery ? "검색 결과가 없습니다." : "등록된 요금 그룹이 없습니다. 새 요금 그룹을 추가해주세요."}
+                </CardContent>
+              </Card>
+            );
+          }
+
+          return (
+            <>
+              <div className="space-y-4">
+                {paginatedGroups.map((group) => (
               <Card key={group.id}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -629,9 +667,38 @@ const PricingManage = () => {
                   </CardContent>
                 )}
               </Card>
-            ))}
-          </div>
-        )}
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-6">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    이전
+                  </Button>
+                  <span className="text-sm text-muted-foreground px-4">
+                    {currentPage} / {totalPages} 페이지 (총 {filteredGroups.length}개)
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    다음
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </>
+          );
+        })()}
 
         {/* Group Dialog */}
         <Dialog open={groupDialogOpen} onOpenChange={setGroupDialogOpen}>
