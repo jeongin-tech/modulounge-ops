@@ -24,6 +24,17 @@ interface Contract {
   visit_source: string | null;
   agreed: boolean | null;
   submitted_at: string | null;
+  receipt_type: string | null;
+  cash_receipt_type: string | null;
+  business_registration_number: string | null;
+  business_name: string | null;
+  business_representative: string | null;
+  business_address: string | null;
+  business_type: string | null;
+  business_category: string | null;
+  receipt_email: string | null;
+  personal_phone: string | null;
+  personal_id_number: string | null;
 }
 
 const ContractResponse = () => {
@@ -38,6 +49,19 @@ const ContractResponse = () => {
   const [companyName, setCompanyName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [visitSource, setVisitSource] = useState("");
+  
+  // Receipt form state
+  const [receiptType, setReceiptType] = useState<string>("none");
+  const [cashReceiptType, setCashReceiptType] = useState<string>("business");
+  const [businessRegNumber, setBusinessRegNumber] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [businessRepresentative, setBusinessRepresentative] = useState("");
+  const [businessAddress, setBusinessAddress] = useState("");
+  const [businessType, setBusinessType] = useState("");
+  const [businessCategory, setBusinessCategory] = useState("");
+  const [receiptEmail, setReceiptEmail] = useState("");
+  const [personalPhone, setPersonalPhone] = useState("");
+  const [personalIdNumber, setPersonalIdNumber] = useState("");
 
   useEffect(() => {
     const fetchContract = async () => {
@@ -63,6 +87,17 @@ const ContractResponse = () => {
           setPhoneNumber(data.phone_number || "");
           setVisitSource(data.visit_source || "");
           setAgreedToTerms(data.agreed || false);
+          setReceiptType(data.receipt_type || "none");
+          setCashReceiptType(data.cash_receipt_type || "business");
+          setBusinessRegNumber(data.business_registration_number || "");
+          setBusinessName(data.business_name || "");
+          setBusinessRepresentative(data.business_representative || "");
+          setBusinessAddress(data.business_address || "");
+          setBusinessType(data.business_type || "");
+          setBusinessCategory(data.business_category || "");
+          setReceiptEmail(data.receipt_email || "");
+          setPersonalPhone(data.personal_phone || "");
+          setPersonalIdNumber(data.personal_id_number || "");
         }
       }
       setLoading(false);
@@ -98,6 +133,17 @@ const ContractResponse = () => {
         phone_number: phoneNumber.trim(),
         visit_source: visitSource.trim() || null,
         submitted_at: new Date().toISOString(),
+        receipt_type: receiptType,
+        cash_receipt_type: receiptType === "cash_receipt" ? cashReceiptType : null,
+        business_registration_number: (receiptType === "tax_invoice" || (receiptType === "cash_receipt" && cashReceiptType === "business")) ? businessRegNumber.trim() || null : null,
+        business_name: receiptType === "tax_invoice" ? businessName.trim() || null : null,
+        business_representative: receiptType === "tax_invoice" ? businessRepresentative.trim() || null : null,
+        business_address: receiptType === "tax_invoice" ? businessAddress.trim() || null : null,
+        business_type: receiptType === "tax_invoice" ? businessType.trim() || null : null,
+        business_category: receiptType === "tax_invoice" ? businessCategory.trim() || null : null,
+        receipt_email: receiptType === "tax_invoice" ? receiptEmail.trim() || null : null,
+        personal_phone: (receiptType === "cash_receipt" && cashReceiptType === "personal") ? personalPhone.trim() || null : null,
+        personal_id_number: (receiptType === "cash_receipt" && cashReceiptType === "personal") ? personalIdNumber.trim() || null : null,
       })
       .eq("access_token", token);
 
@@ -260,9 +306,189 @@ const ContractResponse = () => {
 
         <div style={{ marginBottom: '30px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>■ 증빙 발행 요청</h2>
-          <p style={{ fontSize: '15px', color: '#333' }}>
-            세금계산서 또는 현금영수증 요청: {contract.tax_invoice_requested ? "Y" : "N"}
-          </p>
+          {contract.agreed ? (
+            <div style={{ fontSize: '15px', color: '#333', lineHeight: '1.8' }}>
+              {contract.receipt_type === "tax_invoice" && (
+                <>
+                  <p style={{ fontWeight: 'bold', marginBottom: '10px' }}>✓ 세금계산서</p>
+                  <p>사업자등록번호: {contract.business_registration_number || "-"}</p>
+                  <p>상호명: {contract.business_name || "-"}</p>
+                  <p>대표자명: {contract.business_representative || "-"}</p>
+                  <p>사업장주소: {contract.business_address || "-"}</p>
+                  <p>업태: {contract.business_type || "-"}</p>
+                  <p>종목: {contract.business_category || "-"}</p>
+                  <p>이메일: {contract.receipt_email || "-"}</p>
+                </>
+              )}
+              {contract.receipt_type === "cash_receipt" && (
+                <>
+                  <p style={{ fontWeight: 'bold', marginBottom: '10px' }}>✓ 현금영수증 ({contract.cash_receipt_type === "business" ? "사업자지출증빙" : "개인소득공제"})</p>
+                  {contract.cash_receipt_type === "business" ? (
+                    <p>사업자등록번호: {contract.business_registration_number || "-"}</p>
+                  ) : (
+                    <>
+                      <p>휴대폰번호: {contract.personal_phone || "-"}</p>
+                      {contract.personal_id_number && <p>주민등록번호: {contract.personal_id_number}</p>}
+                    </>
+                  )}
+                </>
+              )}
+              {contract.receipt_type === "none" && <p>증빙 발행 요청 없음</p>}
+            </div>
+          ) : (
+            <div style={{ fontSize: '15px', color: '#333' }}>
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="receiptType"
+                    value="none"
+                    checked={receiptType === "none"}
+                    onChange={(e) => setReceiptType(e.target.value)}
+                    style={{ width: '18px', height: '18px', marginRight: '10px' }}
+                  />
+                  <span>필요 없음</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="receiptType"
+                    value="tax_invoice"
+                    checked={receiptType === "tax_invoice"}
+                    onChange={(e) => setReceiptType(e.target.value)}
+                    style={{ width: '18px', height: '18px', marginRight: '10px' }}
+                  />
+                  <span>세금계산서</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="receiptType"
+                    value="cash_receipt"
+                    checked={receiptType === "cash_receipt"}
+                    onChange={(e) => setReceiptType(e.target.value)}
+                    style={{ width: '18px', height: '18px', marginRight: '10px' }}
+                  />
+                  <span>현금영수증</span>
+                </label>
+              </div>
+
+              {receiptType === "tax_invoice" && (
+                <div style={{ padding: '15px', backgroundColor: '#f9f9f9', borderRadius: '8px', marginTop: '10px' }}>
+                  <p style={{ fontWeight: 'bold', marginBottom: '15px' }}>세금계산서 발행 정보</p>
+                  <input
+                    type="text"
+                    value={businessRegNumber}
+                    onChange={(e) => setBusinessRegNumber(e.target.value)}
+                    placeholder="사업자등록번호 (예: 123-45-67890)"
+                    style={{ width: '100%', padding: '10px', fontSize: '15px', border: '1px solid #ddd', borderRadius: '4px', marginBottom: '10px' }}
+                  />
+                  <input
+                    type="text"
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    placeholder="상호명"
+                    style={{ width: '100%', padding: '10px', fontSize: '15px', border: '1px solid #ddd', borderRadius: '4px', marginBottom: '10px' }}
+                  />
+                  <input
+                    type="text"
+                    value={businessRepresentative}
+                    onChange={(e) => setBusinessRepresentative(e.target.value)}
+                    placeholder="대표자명"
+                    style={{ width: '100%', padding: '10px', fontSize: '15px', border: '1px solid #ddd', borderRadius: '4px', marginBottom: '10px' }}
+                  />
+                  <input
+                    type="text"
+                    value={businessAddress}
+                    onChange={(e) => setBusinessAddress(e.target.value)}
+                    placeholder="사업장 주소"
+                    style={{ width: '100%', padding: '10px', fontSize: '15px', border: '1px solid #ddd', borderRadius: '4px', marginBottom: '10px' }}
+                  />
+                  <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                    <input
+                      type="text"
+                      value={businessType}
+                      onChange={(e) => setBusinessType(e.target.value)}
+                      placeholder="업태"
+                      style={{ flex: 1, padding: '10px', fontSize: '15px', border: '1px solid #ddd', borderRadius: '4px' }}
+                    />
+                    <input
+                      type="text"
+                      value={businessCategory}
+                      onChange={(e) => setBusinessCategory(e.target.value)}
+                      placeholder="종목"
+                      style={{ flex: 1, padding: '10px', fontSize: '15px', border: '1px solid #ddd', borderRadius: '4px' }}
+                    />
+                  </div>
+                  <input
+                    type="email"
+                    value={receiptEmail}
+                    onChange={(e) => setReceiptEmail(e.target.value)}
+                    placeholder="세금계산서 수신 이메일"
+                    style={{ width: '100%', padding: '10px', fontSize: '15px', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+              )}
+
+              {receiptType === "cash_receipt" && (
+                <div style={{ padding: '15px', backgroundColor: '#f9f9f9', borderRadius: '8px', marginTop: '10px' }}>
+                  <p style={{ fontWeight: 'bold', marginBottom: '15px' }}>현금영수증 발행 정보</p>
+                  <div style={{ marginBottom: '15px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', cursor: 'pointer' }}>
+                      <input
+                        type="radio"
+                        name="cashReceiptType"
+                        value="business"
+                        checked={cashReceiptType === "business"}
+                        onChange={(e) => setCashReceiptType(e.target.value)}
+                        style={{ width: '16px', height: '16px', marginRight: '8px' }}
+                      />
+                      <span>사업자지출증빙</span>
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                      <input
+                        type="radio"
+                        name="cashReceiptType"
+                        value="personal"
+                        checked={cashReceiptType === "personal"}
+                        onChange={(e) => setCashReceiptType(e.target.value)}
+                        style={{ width: '16px', height: '16px', marginRight: '8px' }}
+                      />
+                      <span>개인소득공제</span>
+                    </label>
+                  </div>
+                  
+                  {cashReceiptType === "business" ? (
+                    <input
+                      type="text"
+                      value={businessRegNumber}
+                      onChange={(e) => setBusinessRegNumber(e.target.value)}
+                      placeholder="사업자등록번호 (예: 123-45-67890)"
+                      style={{ width: '100%', padding: '10px', fontSize: '15px', border: '1px solid #ddd', borderRadius: '4px' }}
+                    />
+                  ) : (
+                    <>
+                      <input
+                        type="tel"
+                        value={personalPhone}
+                        onChange={(e) => setPersonalPhone(e.target.value)}
+                        placeholder="휴대폰번호 (예: 010-1234-5678)"
+                        style={{ width: '100%', padding: '10px', fontSize: '15px', border: '1px solid #ddd', borderRadius: '4px', marginBottom: '10px' }}
+                      />
+                      <p style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>※ 휴대폰번호로 발급이 어려운 경우 주민등록번호 입력</p>
+                      <input
+                        type="text"
+                        value={personalIdNumber}
+                        onChange={(e) => setPersonalIdNumber(e.target.value)}
+                        placeholder="주민등록번호 (선택)"
+                        style={{ width: '100%', padding: '10px', fontSize: '15px', border: '1px solid #ddd', borderRadius: '4px' }}
+                      />
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div style={{ marginBottom: '30px' }}>

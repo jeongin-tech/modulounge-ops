@@ -201,6 +201,13 @@ export type Database = {
           additional_price: number
           agreed: boolean | null
           base_price: number
+          business_address: string | null
+          business_category: string | null
+          business_name: string | null
+          business_registration_number: string | null
+          business_representative: string | null
+          business_type: string | null
+          cash_receipt_type: string | null
           checkin_time: string
           checkout_time: string
           cleaning_fee: number
@@ -211,8 +218,12 @@ export type Database = {
           guest_count: number
           id: string
           location: string
+          personal_id_number: string | null
+          personal_phone: string | null
           phone_number: string | null
           purpose: string | null
+          receipt_email: string | null
+          receipt_type: string | null
           reservation_date: string
           signature_data: string | null
           submitted_at: string | null
@@ -228,6 +239,13 @@ export type Database = {
           additional_price?: number
           agreed?: boolean | null
           base_price?: number
+          business_address?: string | null
+          business_category?: string | null
+          business_name?: string | null
+          business_registration_number?: string | null
+          business_representative?: string | null
+          business_type?: string | null
+          cash_receipt_type?: string | null
           checkin_time: string
           checkout_time: string
           cleaning_fee?: number
@@ -238,8 +256,12 @@ export type Database = {
           guest_count: number
           id?: string
           location: string
+          personal_id_number?: string | null
+          personal_phone?: string | null
           phone_number?: string | null
           purpose?: string | null
+          receipt_email?: string | null
+          receipt_type?: string | null
           reservation_date: string
           signature_data?: string | null
           submitted_at?: string | null
@@ -255,6 +277,13 @@ export type Database = {
           additional_price?: number
           agreed?: boolean | null
           base_price?: number
+          business_address?: string | null
+          business_category?: string | null
+          business_name?: string | null
+          business_registration_number?: string | null
+          business_representative?: string | null
+          business_type?: string | null
+          cash_receipt_type?: string | null
           checkin_time?: string
           checkout_time?: string
           cleaning_fee?: number
@@ -265,8 +294,12 @@ export type Database = {
           guest_count?: number
           id?: string
           location?: string
+          personal_id_number?: string | null
+          personal_phone?: string | null
           phone_number?: string | null
           purpose?: string | null
+          receipt_email?: string | null
+          receipt_type?: string | null
           reservation_date?: string
           signature_data?: string | null
           submitted_at?: string | null
