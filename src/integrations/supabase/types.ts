@@ -555,6 +555,7 @@ export type Database = {
       }
       pricing_rules: {
         Row: {
+          base_guest_count: number | null
           condition: Json | null
           created_at: string
           end_time: string | null
@@ -567,6 +568,7 @@ export type Database = {
           months: number[] | null
           name: string
           price: number
+          price_per_additional_guest: number | null
           priority: number
           rule_type: string
           start_time: string | null
@@ -574,6 +576,7 @@ export type Database = {
           weekdays: number[] | null
         }
         Insert: {
+          base_guest_count?: number | null
           condition?: Json | null
           created_at?: string
           end_time?: string | null
@@ -586,6 +589,7 @@ export type Database = {
           months?: number[] | null
           name: string
           price?: number
+          price_per_additional_guest?: number | null
           priority?: number
           rule_type: string
           start_time?: string | null
@@ -593,6 +597,7 @@ export type Database = {
           weekdays?: number[] | null
         }
         Update: {
+          base_guest_count?: number | null
           condition?: Json | null
           created_at?: string
           end_time?: string | null
@@ -605,6 +610,7 @@ export type Database = {
           months?: number[] | null
           name?: string
           price?: number
+          price_per_additional_guest?: number | null
           priority?: number
           rule_type?: string
           start_time?: string | null

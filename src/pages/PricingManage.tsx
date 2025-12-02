@@ -66,6 +66,8 @@ interface PricingRule {
   is_percentage: boolean;
   priority: number;
   is_active: boolean;
+  base_guest_count: number | null;
+  price_per_additional_guest: number | null;
 }
 
 const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -115,6 +117,8 @@ const PricingManage = () => {
     price: 0,
     is_percentage: false,
     priority: 0,
+    base_guest_count: 10,
+    price_per_additional_guest: 0,
   });
 
   useEffect(() => {
@@ -263,6 +267,8 @@ const PricingManage = () => {
         price: rule.price,
         is_percentage: rule.is_percentage,
         priority: rule.priority,
+        base_guest_count: rule.base_guest_count ?? 10,
+        price_per_additional_guest: rule.price_per_additional_guest ?? 0,
       });
     } else {
       setEditingRule(null);
@@ -278,6 +284,8 @@ const PricingManage = () => {
         price: 0,
         is_percentage: false,
         priority: 0,
+        base_guest_count: 10,
+        price_per_additional_guest: 0,
       });
     }
     setRuleDialogOpen(true);
@@ -303,6 +311,8 @@ const PricingManage = () => {
         price: ruleForm.price,
         is_percentage: ruleForm.is_percentage,
         priority: ruleForm.priority,
+        base_guest_count: ruleForm.base_guest_count,
+        price_per_additional_guest: ruleForm.price_per_additional_guest,
       };
 
       if (editingRule) {
@@ -727,6 +737,31 @@ const PricingManage = () => {
                     }
                   />
                   <Label htmlFor="is_percentage">퍼센트(%)</Label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>기본 인원수</Label>
+                  <Input
+                    type="number"
+                    value={ruleForm.base_guest_count}
+                    onChange={(e) =>
+                      setRuleForm({ ...ruleForm, base_guest_count: parseInt(e.target.value) || 10 })
+                    }
+                    placeholder="예: 30"
+                  />
+                </div>
+                <div>
+                  <Label>추가 인원당 가격 (원)</Label>
+                  <Input
+                    type="number"
+                    value={ruleForm.price_per_additional_guest}
+                    onChange={(e) =>
+                      setRuleForm({ ...ruleForm, price_per_additional_guest: parseInt(e.target.value) || 0 })
+                    }
+                    placeholder="예: 20000"
+                  />
                 </div>
               </div>
 
