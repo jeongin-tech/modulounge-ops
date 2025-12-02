@@ -30,6 +30,11 @@ interface Contract {
   total_amount: number;
   agreed: boolean;
   submitted_at: string | null;
+  template_id: string | null;
+  contract_templates: {
+    terms_content: string;
+    refund_policy: string;
+  } | null;
 }
 
 const ContractResponse = () => {
@@ -57,7 +62,13 @@ const ContractResponse = () => {
     try {
       const { data, error } = await supabase
         .from("contracts")
-        .select("*")
+        .select(`
+          *,
+          contract_templates (
+            terms_content,
+            refund_policy
+          )
+        `)
         .eq("access_token", token)
         .single();
 
@@ -230,25 +241,27 @@ const ContractResponse = () => {
             <CardContent className="pt-6 space-y-4 text-sm">
               <div>
                 <h3 className="font-bold text-lg mb-2">■ 이용 유의사항</h3>
-                <ul className="space-y-1 text-muted-foreground list-disc list-inside">
-                  <li>벽면에 테이프·접착제 부착 금지 (자국 발생 시 청소비 10만 원 이상 부과)</li>
-                  <li>토사물 발생 시 청소비 10만 원 부과</li>
-                  <li>전 구역 흡연 금지(전자담배 포함) — 위반 시 CCTV 확인 후 청소비 10만 원 이상 부과</li>
-                  <li>내부 기물 및 인테리어 소품 파손 시 수리비 또는 교체비 전액 청구</li>
-                  <li>기본 음향 서비스 제공 (기기 보호를 위해 음향 설정은 기본값으로 고정)</li>
-                  <li>미성년자는 오후 7시 이후 대관 불가</li>
-                  <li>이용 후 남은 물품은 모두 폐기</li>
-                  <li>입·퇴실 시 CCTV 확인</li>
-                </ul>
+                <div className="text-muted-foreground whitespace-pre-line">
+                  {contract.contract_templates?.terms_content || 
+                    `• 벽면에 테이프·접착제 부착 금지 (자국 발생 시 청소비 10만 원 이상 부과)
+• 토사물 발생 시 청소비 10만 원 부과
+• 전 구역 흡연 금지(전자담배 포함) — 위반 시 CCTV 확인 후 청소비 10만 원 이상 부과
+• 내부 기물 및 인테리어 소품 파손 시 수리비 또는 교체비 전액 청구
+• 기본 음향 서비스 제공
+• 미성년자는 오후 7시 이후 대관 불가
+• 이용 후 남은 물품은 모두 폐기
+• 입·퇴실 시 CCTV 확인`}
+                </div>
               </div>
 
               <div>
                 <h3 className="font-bold text-lg mb-2">■ 환불 규정</h3>
-                <ul className="space-y-1 text-muted-foreground list-disc list-inside">
-                  <li>결제 완료 ~ 이용일 8일 전: 총 금액의 20% 공제 후 80% 환불</li>
-                  <li>이용일 7일 전 ~ 당일: 환불 불가</li>
-                  <li>이용일 8일 전까지 날짜/지점 변경 가능 (총 금액의 20% 추가 납부 시 이월 가능)</li>
-                </ul>
+                <div className="text-muted-foreground whitespace-pre-line">
+                  {contract.contract_templates?.refund_policy || 
+                    `• 결제 완료 ~ 이용일 8일 전: 총 금액의 20% 공제 후 80% 환불
+• 이용일 7일 전 ~ 당일: 환불 불가
+• 이용일 8일 전까지 날짜/지점 변경 가능 (총 금액의 20% 추가 납부 시 이월 가능)`}
+                </div>
               </div>
             </CardContent>
           </Card>

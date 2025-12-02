@@ -130,6 +130,65 @@ export type Database = {
           },
         ]
       }
+      contract_templates: {
+        Row: {
+          additional_price_per_person: number
+          base_guest_count: number
+          base_price: number
+          cleaning_fee: number
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          refund_policy: string
+          terms_content: string
+          updated_at: string
+          vat_rate: number
+        }
+        Insert: {
+          additional_price_per_person?: number
+          base_guest_count?: number
+          base_price?: number
+          cleaning_fee?: number
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          refund_policy: string
+          terms_content: string
+          updated_at?: string
+          vat_rate?: number
+        }
+        Update: {
+          additional_price_per_person?: number
+          base_guest_count?: number
+          base_price?: number
+          cleaning_fee?: number
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          refund_policy?: string
+          terms_content?: string
+          updated_at?: string
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contracts: {
         Row: {
           access_token: string
@@ -152,6 +211,7 @@ export type Database = {
           signature_data: string | null
           submitted_at: string | null
           tax_invoice_requested: boolean | null
+          template_id: string | null
           total_amount: number
           updated_at: string
           vat: number
@@ -178,6 +238,7 @@ export type Database = {
           signature_data?: string | null
           submitted_at?: string | null
           tax_invoice_requested?: boolean | null
+          template_id?: string | null
           total_amount?: number
           updated_at?: string
           vat?: number
@@ -204,6 +265,7 @@ export type Database = {
           signature_data?: string | null
           submitted_at?: string | null
           tax_invoice_requested?: boolean | null
+          template_id?: string | null
           total_amount?: number
           updated_at?: string
           vat?: number
@@ -215,6 +277,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "contract_templates"
             referencedColumns: ["id"]
           },
         ]
