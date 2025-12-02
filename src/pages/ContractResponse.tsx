@@ -9,10 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { CheckCircle, ChevronRight } from "lucide-react";
+import { CheckCircle, ChevronRight, Download } from "lucide-react";
 import { format } from "date-fns";
 import { loungeImages } from "@/lib/loungeImages";
 import logo from "@/assets/logo.jpg";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 interface Contract {
   id: string;
@@ -42,10 +44,12 @@ const ContractResponse = () => {
   const { token } = useParams();
   const navigate = useNavigate();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const contractRef = useRef<HTMLDivElement>(null);
   const [contract, setContract] = useState<Contract | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [formData, setFormData] = useState({
     customer_name: "",
     company_name: "",
@@ -135,6 +139,44 @@ const ContractResponse = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   };
 
+  const handleDownloadPDF = async () => {
+    if (!contractRef.current || !contract) return;
+    
+    setDownloading(true);
+    try {
+      const canvas = await html2canvas(contractRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+      
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      const imgX = (pdfWidth - imgWidth * ratio) / 2;
+      const imgY = 0;
+      
+      pdf.addImage(imgData, "PNG", imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+      pdf.save(`모드라운지_계약서_${contract.customer_name || "고객"}_${format(new Date(contract.reservation_date), "yyyyMMdd")}.pdf`);
+      
+      toast.success("PDF 다운로드가 완료되었습니다!");
+    } catch (error) {
+      console.error("PDF 생성 오류:", error);
+      toast.error("PDF 생성에 실패했습니다.");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -204,6 +246,14 @@ const ContractResponse = () => {
             <p className="text-muted-foreground">
               {format(new Date(contract.submitted_at), "yyyy년 MM월 dd일 HH:mm")}에 제출됨
             </p>
+            <Button 
+              onClick={handleDownloadPDF}
+              disabled={downloading}
+              className="w-full"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              {downloading ? "PDF 생성 중..." : "계약서 PDF 다운로드"}
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -212,7 +262,7 @@ const ContractResponse = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-2xl mx-auto p-4 md:p-8 space-y-8">
+      <div ref={contractRef} className="max-w-2xl mx-auto p-4 md:p-8 space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
           <img src={logo} alt="모드라운지" className="h-16 w-16 mx-auto rounded-full" />
