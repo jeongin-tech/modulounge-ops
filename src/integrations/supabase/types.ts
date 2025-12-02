@@ -140,8 +140,10 @@ export type Database = {
           created_by: string
           description: string | null
           id: string
+          image_urls: Json | null
           is_active: boolean
           name: string
+          pricing_items: Json | null
           refund_policy: string
           terms_content: string
           updated_at: string
@@ -156,8 +158,10 @@ export type Database = {
           created_by: string
           description?: string | null
           id?: string
+          image_urls?: Json | null
           is_active?: boolean
           name: string
+          pricing_items?: Json | null
           refund_policy: string
           terms_content: string
           updated_at?: string
@@ -172,8 +176,10 @@ export type Database = {
           created_by?: string
           description?: string | null
           id?: string
+          image_urls?: Json | null
           is_active?: boolean
           name?: string
+          pricing_items?: Json | null
           refund_policy?: string
           terms_content?: string
           updated_at?: string
