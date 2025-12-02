@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
+import { toast } from "sonner";
 
 interface Contract {
   location: string;
@@ -21,12 +22,22 @@ interface Contract {
   phone_number: string | null;
   tax_invoice_requested: boolean | null;
   visit_source: string | null;
+  agreed: boolean | null;
+  submitted_at: string | null;
 }
 
 const ContractResponse = () => {
   const { token } = useParams<{ token: string }>();
   const [contract, setContract] = useState<Contract | null>(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  
+  // Form state
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [customerName, setCustomerName] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [visitSource, setVisitSource] = useState("");
 
   useEffect(() => {
     const fetchContract = async () => {
@@ -45,12 +56,69 @@ const ContractResponse = () => {
         console.error("Error fetching contract:", error);
       } else {
         setContract(data);
+        // Pre-fill form if data exists
+        if (data) {
+          setCustomerName(data.customer_name || "");
+          setCompanyName(data.company_name || "");
+          setPhoneNumber(data.phone_number || "");
+          setVisitSource(data.visit_source || "");
+          setAgreedToTerms(data.agreed || false);
+        }
       }
       setLoading(false);
     };
 
     fetchContract();
   }, [token]);
+
+  const handleSubmit = async () => {
+    if (!agreedToTerms) {
+      toast.error("유의사항 및 환불 규정에 동의해주세요.");
+      return;
+    }
+
+    if (!customerName.trim()) {
+      toast.error("예약자 성함을 입력해주세요.");
+      return;
+    }
+
+    if (!phoneNumber.trim()) {
+      toast.error("핸드폰 번호를 입력해주세요.");
+      return;
+    }
+
+    setSubmitting(true);
+
+    const { error } = await supabase
+      .from("contracts")
+      .update({
+        agreed: true,
+        customer_name: customerName.trim(),
+        company_name: companyName.trim() || null,
+        phone_number: phoneNumber.trim(),
+        visit_source: visitSource.trim() || null,
+        submitted_at: new Date().toISOString(),
+      })
+      .eq("access_token", token);
+
+    setSubmitting(false);
+
+    if (error) {
+      toast.error("서명 완료 중 오류가 발생했습니다.");
+      console.error("Error updating contract:", error);
+    } else {
+      toast.success("서명이 완료되었습니다!");
+      // Refresh contract data
+      const { data } = await supabase
+        .from("contracts")
+        .select("*")
+        .eq("access_token", token)
+        .maybeSingle();
+      if (data) {
+        setContract(data);
+      }
+    }
+  };
 
   if (loading) {
     return (
@@ -200,11 +268,25 @@ const ContractResponse = () => {
         <div style={{ marginBottom: '30px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>■ 방문 경로</h2>
           <p style={{ fontSize: '15px', color: '#333', marginBottom: '8px' }}>저희 공간을 어떤 경로를 통해 알게 되셨나요?</p>
-          <p style={{ fontSize: '15px', color: '#333' }}>검색어 포함하여 작성해 주세요.</p>
-          {contract.visit_source && (
-            <p style={{ fontSize: '15px', color: '#333', marginTop: '10px', paddingLeft: '20px' }}>
-              {contract.visit_source}
+          <p style={{ fontSize: '15px', color: '#333', marginBottom: '15px' }}>검색어 포함하여 작성해 주세요.</p>
+          {contract.agreed ? (
+            <p style={{ fontSize: '15px', color: '#333', paddingLeft: '20px' }}>
+              {contract.visit_source || "(미작성)"}
             </p>
+          ) : (
+            <input
+              type="text"
+              value={visitSource}
+              onChange={(e) => setVisitSource(e.target.value)}
+              placeholder="예: 네이버 검색, 인스타그램, 지인 추천 등"
+              style={{
+                width: '100%',
+                padding: '10px',
+                fontSize: '15px',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+              }}
+            />
           )}
         </div>
 
@@ -222,15 +304,135 @@ const ContractResponse = () => {
         <div style={{ marginBottom: '30px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>■ 마지막 작성 및 동의 항목</h2>
           <div style={{ fontSize: '15px', color: '#333', lineHeight: '1.8' }}>
-            <p style={{ marginBottom: '8px' }}>1) 유의사항 및 환불 규정에 동의하시나요?</p>
-            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>동의합니다 (서명 또는 체크)</p>
-            <p style={{ marginBottom: '8px' }}>2) 예약자 성함</p>
-            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>{contract.customer_name || "(작성)"}</p>
-            <p style={{ marginBottom: '8px' }}>3) 기업 대관 시 기업명 & 위치</p>
-            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>{contract.company_name || "(해당 시 작성)"}</p>
-            <p style={{ marginBottom: '8px' }}>4) 핸드폰 번호</p>
-            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>{contract.phone_number || "(작성)"}</p>
+            <p style={{ marginBottom: '15px' }}>1) 유의사항 및 환불 규정에 동의하시나요?</p>
+            {contract.agreed ? (
+              <p style={{ marginBottom: '20px', paddingLeft: '20px', color: '#0066cc', fontWeight: 'bold' }}>
+                ✓ 동의함 (서명 완료)
+              </p>
+            ) : (
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: '20px', 
+                paddingLeft: '20px',
+                cursor: 'pointer'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  style={{ 
+                    width: '18px', 
+                    height: '18px', 
+                    marginRight: '10px',
+                    cursor: 'pointer'
+                  }}
+                />
+                <span>동의합니다</span>
+              </label>
+            )}
+
+            <p style={{ marginBottom: '10px' }}>2) 예약자 성함 <span style={{ color: '#ff0000' }}>*</span></p>
+            {contract.agreed ? (
+              <p style={{ marginBottom: '20px', paddingLeft: '20px' }}>{contract.customer_name}</p>
+            ) : (
+              <input
+                type="text"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="이름을 입력해주세요"
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  fontSize: '15px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  marginBottom: '20px',
+                }}
+              />
+            )}
+
+            <p style={{ marginBottom: '10px' }}>3) 기업 대관 시 기업명 & 위치</p>
+            {contract.agreed ? (
+              <p style={{ marginBottom: '20px', paddingLeft: '20px' }}>{contract.company_name || "(미작성)"}</p>
+            ) : (
+              <input
+                type="text"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                placeholder="해당 시 작성"
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  fontSize: '15px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  marginBottom: '20px',
+                }}
+              />
+            )}
+
+            <p style={{ marginBottom: '10px' }}>4) 핸드폰 번호 <span style={{ color: '#ff0000' }}>*</span></p>
+            {contract.agreed ? (
+              <p style={{ marginBottom: '20px', paddingLeft: '20px' }}>{contract.phone_number}</p>
+            ) : (
+              <input
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="010-1234-5678"
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  fontSize: '15px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  marginBottom: '20px',
+                }}
+              />
+            )}
           </div>
+
+          {!contract.agreed && (
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              style={{
+                width: '100%',
+                padding: '15px',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                color: 'white',
+                backgroundColor: submitting ? '#999' : '#0066cc',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: submitting ? 'not-allowed' : 'pointer',
+                marginTop: '20px',
+              }}
+            >
+              {submitting ? "처리 중..." : "서명 완료"}
+            </button>
+          )}
+
+          {contract.agreed && (
+            <div style={{
+              padding: '15px',
+              backgroundColor: '#e8f5e9',
+              border: '1px solid #4caf50',
+              borderRadius: '8px',
+              marginTop: '20px',
+              textAlign: 'center',
+            }}>
+              <p style={{ fontSize: '16px', fontWeight: 'bold', color: '#2e7d32' }}>
+                ✓ 서명이 완료되었습니다
+              </p>
+              {contract.submitted_at && (
+                <p style={{ fontSize: '14px', color: '#666', marginTop: '5px' }}>
+                  {format(new Date(contract.submitted_at), "yyyy년 M월 d일 HH:mm", { locale: ko })}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
