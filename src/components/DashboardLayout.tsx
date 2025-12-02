@@ -16,6 +16,7 @@ import {
   Menu,
   X,
   FileSignature,
+  FileText,
 } from "lucide-react";
 import logo from "@/assets/logo.jpg";
 import { toast } from "sonner";
@@ -144,6 +145,12 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
       icon: <FileSignature className="h-5 w-5" />,
       label: "전자서명관리",
       path: "/contracts",
+      roles: ["STAFF"],
+    },
+    {
+      icon: <FileText className="h-5 w-5" />,
+      label: "견적서 작성하기",
+      path: "/quote",
       roles: ["STAFF"],
     },
     {
