@@ -189,22 +189,24 @@ const ContractResponse = () => {
       
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-      const imgX = (pdfWidth - imgWidth * ratio) / 2;
       
-      let heightLeft = imgHeight * ratio;
-      let position = 0;
+      // 실제 크기로 출력 (A4 너비에 맞춤)
+      const imgWidth = pdfWidth - 20; // 좌우 10mm 여백
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
       
-      pdf.addImage(imgData, 'PNG', imgX, position, imgWidth * ratio, imgHeight * ratio);
-      heightLeft -= pdfHeight;
+      let heightLeft = imgHeight;
+      let position = 10; // 상단 10mm 여백
       
+      // 첫 페이지
+      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+      heightLeft -= (pdfHeight - 20); // 상하 여백 제외
+      
+      // 추가 페이지들
       while (heightLeft > 0) {
-        position = heightLeft - imgHeight * ratio;
         pdf.addPage();
-        pdf.addImage(imgData, 'PNG', imgX, position, imgWidth * ratio, imgHeight * ratio);
-        heightLeft -= pdfHeight;
+        position = 10 - (imgHeight - heightLeft);
+        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+        heightLeft -= (pdfHeight - 20);
       }
       
       const fileName = `모드라운지_계약서_${contract.customer_name || '고객'}_${format(new Date(contract.reservation_date), 'yyyyMMdd')}.pdf`;
