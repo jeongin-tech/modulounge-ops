@@ -510,6 +510,8 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          profile_id: string | null
+          season_type: string | null
           updated_at: string
         }
         Insert: {
@@ -519,6 +521,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          profile_id?: string | null
+          season_type?: string | null
           updated_at?: string
         }
         Update: {
@@ -528,6 +532,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          profile_id?: string | null
+          season_type?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -538,47 +544,72 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "pricing_rule_groups_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       pricing_rules: {
         Row: {
           condition: Json | null
           created_at: string
+          end_time: string | null
           group_id: string
           id: string
           is_active: boolean
           is_percentage: boolean
+          max_guests: number | null
+          min_guests: number | null
+          months: number[] | null
           name: string
           price: number
           priority: number
           rule_type: string
+          start_time: string | null
           updated_at: string
+          weekdays: number[] | null
         }
         Insert: {
           condition?: Json | null
           created_at?: string
+          end_time?: string | null
           group_id: string
           id?: string
           is_active?: boolean
           is_percentage?: boolean
+          max_guests?: number | null
+          min_guests?: number | null
+          months?: number[] | null
           name: string
           price?: number
           priority?: number
           rule_type: string
+          start_time?: string | null
           updated_at?: string
+          weekdays?: number[] | null
         }
         Update: {
           condition?: Json | null
           created_at?: string
+          end_time?: string | null
           group_id?: string
           id?: string
           is_active?: boolean
           is_percentage?: boolean
+          max_guests?: number | null
+          min_guests?: number | null
+          months?: number[] | null
           name?: string
           price?: number
           priority?: number
           rule_type?: string
+          start_time?: string | null
           updated_at?: string
+          weekdays?: number[] | null
         }
         Relationships: [
           {
