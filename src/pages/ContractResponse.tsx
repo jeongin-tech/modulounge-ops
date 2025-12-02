@@ -91,9 +91,16 @@ const ContractResponse = () => {
           )
         `)
         .eq("access_token", token)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      
+      if (!data) {
+        toast.error("계약서를 찾을 수 없습니다.");
+        setContract(null);
+        setLoading(false);
+        return;
+      }
       
       if (data.submitted_at) {
         toast.info("이미 제출된 계약서입니다.");
