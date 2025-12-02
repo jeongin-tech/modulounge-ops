@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Copy, CheckCircle, Clock } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, Copy, CheckCircle, Clock, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -22,14 +23,42 @@ interface Contract {
   created_at: string;
 }
 
+const ITEMS_PER_PAGE = 5;
+
 const ContractsManage = () => {
   const navigate = useNavigate();
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchName, setSearchName] = useState("");
+  const [searchDate, setSearchDate] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     fetchContracts();
   }, []);
+
+  // 필터링된 계약서 목록
+  const filteredContracts = useMemo(() => {
+    return contracts.filter((contract) => {
+      const matchesName = !searchName || 
+        (contract.customer_name?.toLowerCase().includes(searchName.toLowerCase()));
+      const matchesDate = !searchDate || 
+        contract.reservation_date === searchDate;
+      return matchesName && matchesDate;
+    });
+  }, [contracts, searchName, searchDate]);
+
+  // 페이지네이션 계산
+  const totalPages = Math.ceil(filteredContracts.length / ITEMS_PER_PAGE);
+  const paginatedContracts = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredContracts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredContracts, currentPage]);
+
+  // 검색 조건 변경 시 첫 페이지로 이동
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchName, searchDate]);
 
   const fetchContracts = async () => {
     try {
@@ -75,21 +104,43 @@ const ContractsManage = () => {
           </div>
         </div>
 
+        {/* 검색 필터 */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="고객명으로 검색"
+              value={searchName}
+              onChange={(e) => setSearchName(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <div className="w-full sm:w-48">
+            <Input
+              type="date"
+              value={searchDate}
+              onChange={(e) => setSearchDate(e.target.value)}
+              className="w-full"
+            />
+          </div>
+        </div>
+
         {loading ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">로딩 중...</p>
           </div>
-        ) : contracts.length === 0 ? (
+        ) : filteredContracts.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
               <p className="text-muted-foreground">
-                아직 생성된 계약서가 없습니다.
+                {contracts.length === 0 ? "아직 생성된 계약서가 없습니다." : "검색 결과가 없습니다."}
               </p>
             </CardContent>
           </Card>
         ) : (
+          <>
           <div className="grid gap-4">
-            {contracts.map((contract) => (
+            {paginatedContracts.map((contract) => (
               <Card key={contract.id} className="hover:border-primary transition-colors">
                 <CardHeader>
                   <div className="flex items-start justify-between">
@@ -164,6 +215,34 @@ const ContractsManage = () => {
               </Card>
             ))}
           </div>
+
+          {/* 페이지네이션 */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-6">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                이전
+              </Button>
+              <span className="text-sm text-muted-foreground px-4">
+                {currentPage} / {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                다음
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+          </>
         )}
       </div>
     </DashboardLayout>
