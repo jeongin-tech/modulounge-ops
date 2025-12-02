@@ -19,6 +19,7 @@ import {
   FileText,
   Search,
   BookOpen,
+  Calculator,
 } from "lucide-react";
 import logo from "@/assets/logo.jpg";
 import { toast } from "sonner";
@@ -159,6 +160,12 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
       icon: <Search className="h-5 w-5" />,
       label: "공간검색하기",
       path: "/space-finder",
+      roles: ["STAFF"],
+    },
+    {
+      icon: <Calculator className="h-5 w-5" />,
+      label: "대관료계산기",
+      path: "/fee-calculator",
       roles: ["STAFF"],
     },
     {
