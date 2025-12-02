@@ -1,11 +1,9 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { toast } from "sonner";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 
 interface Contract {
   location: string;
@@ -44,8 +42,6 @@ const ContractResponse = () => {
   const [contract, setContract] = useState<Contract | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [downloading, setDownloading] = useState(false);
-  const contractRef = useRef<HTMLDivElement>(null);
   
   // Form state
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -170,55 +166,8 @@ const ContractResponse = () => {
     }
   };
 
-  const handleDownloadPDF = async () => {
-    if (!contractRef.current || !contract) return;
-    
-    setDownloading(true);
-    toast.info("PDF 생성 중...");
-    
-    try {
-      const canvas = await html2canvas(contractRef.current, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-      });
-      
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      
-      // 실제 크기로 출력 (A4 너비에 맞춤)
-      const imgWidth = pdfWidth - 20; // 좌우 10mm 여백
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      let heightLeft = imgHeight;
-      let position = 10; // 상단 10mm 여백
-      
-      // 첫 페이지
-      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-      heightLeft -= (pdfHeight - 20); // 상하 여백 제외
-      
-      // 추가 페이지들
-      while (heightLeft > 0) {
-        pdf.addPage();
-        position = 10 - (imgHeight - heightLeft);
-        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-        heightLeft -= (pdfHeight - 20);
-      }
-      
-      const fileName = `모드라운지_계약서_${contract.customer_name || '고객'}_${format(new Date(contract.reservation_date), 'yyyyMMdd')}.pdf`;
-      pdf.save(fileName);
-      
-      toast.success("PDF 다운로드 완료!");
-    } catch (error) {
-      console.error("PDF 생성 오류:", error);
-      toast.error("PDF 생성 중 오류가 발생했습니다.");
-    } finally {
-      setDownloading(false);
-    }
+  const handlePrint = () => {
+    window.print();
   };
 
   if (loading) {
@@ -274,7 +223,6 @@ const ContractResponse = () => {
 
   return (
     <div 
-      ref={contractRef}
       style={{ 
         minHeight: '100vh', 
         backgroundColor: 'white', 
@@ -717,22 +665,22 @@ const ContractResponse = () => {
                 )}
               </div>
               <button
-                onClick={handleDownloadPDF}
-                disabled={downloading}
+                onClick={handlePrint}
                 style={{
                   width: '100%',
                   padding: '15px',
                   fontSize: '16px',
                   fontWeight: 'bold',
                   color: 'white',
-                  backgroundColor: downloading ? '#999' : '#333',
+                  backgroundColor: '#333',
                   border: 'none',
                   borderRadius: '8px',
-                  cursor: downloading ? 'not-allowed' : 'pointer',
+                  cursor: 'pointer',
                   marginTop: '15px',
                 }}
+                className="print:hidden"
               >
-                {downloading ? "PDF 생성 중..." : "📄 계약서 PDF 다운로드"}
+                🖨️ 계약서 인쇄 / PDF 저장
               </button>
             </>
           )}
