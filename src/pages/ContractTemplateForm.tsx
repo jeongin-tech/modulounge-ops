@@ -7,8 +7,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import lounge1 from "@/assets/lounge-1.png";
+import lounge2 from "@/assets/lounge-2.png";
+import lounge3 from "@/assets/lounge-3.png";
+import lounge4 from "@/assets/lounge-4.png";
+import lounge5 from "@/assets/lounge-5.png";
+
+const AVAILABLE_IMAGES = [
+  { id: "lounge-1", src: lounge1, label: "라운지 1" },
+  { id: "lounge-2", src: lounge2, label: "라운지 2" },
+  { id: "lounge-3", src: lounge3, label: "라운지 3" },
+  { id: "lounge-4", src: lounge4, label: "라운지 4" },
+  { id: "lounge-5", src: lounge5, label: "라운지 5" },
+];
+
+interface PricingItem {
+  label: string;
+  field: string;
+}
 
 const ContractTemplateForm = () => {
   const navigate = useNavigate();
@@ -23,6 +42,13 @@ const ContractTemplateForm = () => {
     additional_price_per_person: 25000,
     cleaning_fee: 150000,
     vat_rate: 0.1,
+    image_urls: [] as string[],
+    pricing_items: [
+      { label: "기본 이용료 (10인 기준)", field: "base_price" },
+      { label: "인원 추가", field: "additional_price" },
+      { label: "청소대행", field: "cleaning_fee" },
+      { label: "부가세", field: "vat" },
+    ] as PricingItem[],
     terms_content: `■ 이용 유의사항
 
 • 벽면에 테이프·접착제 부착 금지 (자국 발생 시 청소비 10만 원 이상 부과)
@@ -66,6 +92,13 @@ const ContractTemplateForm = () => {
         additional_price_per_person: data.additional_price_per_person,
         cleaning_fee: data.cleaning_fee,
         vat_rate: data.vat_rate,
+        image_urls: Array.isArray(data.image_urls) ? (data.image_urls as unknown as string[]) : [],
+        pricing_items: Array.isArray(data.pricing_items) ? (data.pricing_items as unknown as PricingItem[]) : [
+          { label: "기본 이용료 (10인 기준)", field: "base_price" },
+          { label: "인원 추가", field: "additional_price" },
+          { label: "청소대행", field: "cleaning_fee" },
+          { label: "부가세", field: "vat" },
+        ],
         terms_content: data.terms_content,
         refund_policy: data.refund_policy,
       });
@@ -74,6 +107,41 @@ const ContractTemplateForm = () => {
       toast.error("템플릿을 불러오는데 실패했습니다.");
       navigate("/contracts/templates");
     }
+  };
+
+  const toggleImage = (imageId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      image_urls: prev.image_urls.includes(imageId)
+        ? prev.image_urls.filter((id) => id !== imageId)
+        : [...prev.image_urls, imageId],
+    }));
+  };
+
+  const addPricingItem = () => {
+    setFormData((prev) => ({
+      ...prev,
+      pricing_items: [
+        ...prev.pricing_items,
+        { label: "", field: `custom_${Date.now()}` },
+      ],
+    }));
+  };
+
+  const updatePricingItem = (index: number, label: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      pricing_items: prev.pricing_items.map((item, i) =>
+        i === index ? { ...item, label } : item
+      ),
+    }));
+  };
+
+  const removePricingItem = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      pricing_items: prev.pricing_items.filter((_, i) => i !== index),
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -87,7 +155,11 @@ const ContractTemplateForm = () => {
       if (isEdit) {
         const { error } = await supabase
           .from("contract_templates")
-          .update(formData)
+          .update({
+            ...formData,
+            image_urls: formData.image_urls as any,
+            pricing_items: formData.pricing_items as any,
+          })
           .eq("id", id);
 
         if (error) throw error;
@@ -98,6 +170,8 @@ const ContractTemplateForm = () => {
           .insert([
             {
               ...formData,
+              image_urls: formData.image_urls as any,
+              pricing_items: formData.pricing_items as any,
               created_by: user.id,
             },
           ]);
@@ -166,6 +240,43 @@ const ContractTemplateForm = () => {
                   placeholder="템플릿에 대한 설명을 입력하세요"
                 />
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>라운지 이미지 선택</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {AVAILABLE_IMAGES.map((image) => (
+                  <div
+                    key={image.id}
+                    className="relative cursor-pointer group"
+                    onClick={() => toggleImage(image.id)}
+                  >
+                    <img
+                      src={image.src}
+                      alt={image.label}
+                      className={`w-full h-32 object-cover rounded-lg transition-all ${
+                        formData.image_urls.includes(image.id)
+                          ? "ring-4 ring-primary"
+                          : "opacity-70 hover:opacity-100"
+                      }`}
+                    />
+                    <div className="absolute top-2 right-2">
+                      <Checkbox
+                        checked={formData.image_urls.includes(image.id)}
+                        className="bg-white"
+                      />
+                    </div>
+                    <p className="text-sm text-center mt-1">{image.label}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-sm text-muted-foreground mt-4">
+                선택한 이미지: {formData.image_urls.length}개
+              </p>
             </CardContent>
           </Card>
 
@@ -256,6 +367,46 @@ const ContractTemplateForm = () => {
                     required
                   />
                 </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <div className="flex items-center justify-between mb-4">
+                  <Label className="text-base">요금 항목 라벨 (계약서에 표시될 이름)</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addPricingItem}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    항목 추가
+                  </Button>
+                </div>
+                <div className="space-y-3">
+                  {formData.pricing_items.map((item, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Input
+                        value={item.label}
+                        onChange={(e) => updatePricingItem(index, e.target.value)}
+                        placeholder="예: 기본 이용료, 인원 추가"
+                        required
+                      />
+                      {formData.pricing_items.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removePricingItem(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  계약서 작성 시 이 라벨로 표시됩니다
+                </p>
               </div>
             </CardContent>
           </Card>

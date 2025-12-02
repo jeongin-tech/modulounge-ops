@@ -11,8 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { CheckCircle, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
-import loungeImage1 from "@/assets/lounge-image-1.png";
-import loungeImage2 from "@/assets/lounge-image-2.png";
+import { loungeImages } from "@/lib/loungeImages";
 import logo from "@/assets/logo.jpg";
 
 interface Contract {
@@ -34,6 +33,8 @@ interface Contract {
   contract_templates: {
     terms_content: string;
     refund_policy: string;
+    image_urls: any;
+    pricing_items: any;
   } | null;
 }
 
@@ -66,7 +67,9 @@ const ContractResponse = () => {
           *,
           contract_templates (
             terms_content,
-            refund_policy
+            refund_policy,
+            image_urls,
+            pricing_items
           )
         `)
         .eq("access_token", token)
@@ -222,18 +225,36 @@ const ContractResponse = () => {
         </div>
 
         {/* Lounge Images */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <img
-            src={loungeImage1}
-            alt="모드라운지 내부"
-            className="rounded-lg w-full object-cover h-48"
-          />
-          <img
-            src={loungeImage2}
-            alt="모드라운지 내부"
-            className="rounded-lg w-full object-cover h-48"
-          />
-        </div>
+        {contract.contract_templates?.image_urls && 
+         Array.isArray(contract.contract_templates.image_urls) && 
+         contract.contract_templates.image_urls.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {contract.contract_templates.image_urls.map((imageId: string, idx: number) => {
+              const imageSrc = loungeImages[imageId];
+              return imageSrc ? (
+                <img
+                  key={idx}
+                  src={imageSrc}
+                  alt={`모드라운지 내부 ${idx + 1}`}
+                  className="rounded-lg w-full object-cover h-48"
+                />
+              ) : null;
+            })}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <img
+              src={loungeImages["lounge-1"]}
+              alt="모드라운지 내부"
+              className="rounded-lg w-full object-cover h-48"
+            />
+            <img
+              src={loungeImages["lounge-2"]}
+              alt="모드라운지 내부"
+              className="rounded-lg w-full object-cover h-48"
+            />
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Contract Terms */}
@@ -308,22 +329,43 @@ const ContractResponse = () => {
             <CardContent className="pt-6 space-y-2">
               <h3 className="font-bold text-lg mb-4">■ 이용 요금</h3>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">기본 이용료(10인 기준)</span>
-                  <span className="font-medium">{contract.base_price.toLocaleString()}원</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">인원 추가</span>
-                  <span className="font-medium">{contract.additional_price.toLocaleString()}원</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">청소대행</span>
-                  <span className="font-medium">{contract.cleaning_fee.toLocaleString()}원</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">부가세</span>
-                  <span className="font-medium">{contract.vat.toLocaleString()}원</span>
-                </div>
+                {contract.contract_templates?.pricing_items && 
+                 Array.isArray(contract.contract_templates.pricing_items) ? (
+                  contract.contract_templates.pricing_items.map((item: any, idx: number) => {
+                    const fieldMap: Record<string, number> = {
+                      base_price: contract.base_price,
+                      additional_price: contract.additional_price,
+                      cleaning_fee: contract.cleaning_fee,
+                      vat: contract.vat,
+                    };
+                    const amount = fieldMap[item.field] || 0;
+                    return (
+                      <div key={idx} className="flex justify-between">
+                        <span className="text-muted-foreground">{item.label}</span>
+                        <span className="font-medium">{amount.toLocaleString()}원</span>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">기본 이용료(10인 기준)</span>
+                      <span className="font-medium">{contract.base_price.toLocaleString()}원</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">인원 추가</span>
+                      <span className="font-medium">{contract.additional_price.toLocaleString()}원</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">청소대행</span>
+                      <span className="font-medium">{contract.cleaning_fee.toLocaleString()}원</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">부가세</span>
+                      <span className="font-medium">{contract.vat.toLocaleString()}원</span>
+                    </div>
+                  </>
+                )}
                 <div className="pt-2 border-t flex justify-between text-lg">
                   <span className="font-bold">▶ 총 입금 금액</span>
                   <span className="font-bold text-primary">{contract.total_amount.toLocaleString()}원</span>
