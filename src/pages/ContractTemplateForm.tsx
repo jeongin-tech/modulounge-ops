@@ -7,22 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
-import lounge1 from "@/assets/lounge-1.png";
-import lounge2 from "@/assets/lounge-2.png";
-import lounge3 from "@/assets/lounge-3.png";
-import lounge4 from "@/assets/lounge-4.png";
-import lounge5 from "@/assets/lounge-5.png";
-
-const AVAILABLE_IMAGES = [
-  { id: "lounge-1", src: lounge1, label: "라운지 1" },
-  { id: "lounge-2", src: lounge2, label: "라운지 2" },
-  { id: "lounge-3", src: lounge3, label: "라운지 3" },
-  { id: "lounge-4", src: lounge4, label: "라운지 4" },
-  { id: "lounge-5", src: lounge5, label: "라운지 5" },
-];
 
 interface PricingItem {
   label: string;
@@ -56,9 +42,16 @@ const ContractTemplateForm = () => {
 • 전 구역 흡연 금지(전자담배 포함) — 위반 시 CCTV 확인 후 청소비 10만 원 이상 부과
 • 내부 기물 및 인테리어 소품 파손 시 수리비 또는 교체비 전액 청구
 • 기본 음향 서비스 제공
+• 기기 보호를 위해 음향 설정은 기본값으로 고정
+• 중요 행사 시 음향 렌탈 옵션 권장
 • 미성년자는 오후 7시 이후 대관 불가
+• 예약은 결제 완료 순으로 확정
 • 이용 후 남은 물품은 모두 폐기
-• 입·퇴실 시 CCTV 확인`,
+• 시간 추가(7만 원)는 종료 3시간 전까지 요청
+• 올나잇 타임은 오후 10시까지 예약 가능
+• 입·퇴실 시 CCTV 확인
+• 계약 인원 초과 시 즉시 추가요금 및 패널티 부과
+• 전 타임 예약이 있을 경우 사전 입실 불가`,
     refund_policy: `■ 환불 규정
 
 • 인원 확정 후 인원 조정으로 인한 차액 환불 불가
@@ -66,7 +59,14 @@ const ContractTemplateForm = () => {
 
 환불 기준:
 • 결제 완료 ~ 이용일 8일 전: 총 금액의 20% 공제 후 80% 환불
-• 이용일 7일 전 ~ 당일: 환불 불가`,
+• 이용일 7일 전 ~ 당일: 환불 불가
+
+날짜/지점 변경 규정:
+• 이용일 8일 전까지 변경 가능
+• 총 금액의 20% 추가 납부 시 이월 가능
+• 지점 변경은 해당 일자에 타 지점 예약이 없을 경우만 가능
+
+※ 위 규정은 옵션 및 부가세 포함 전체 금액에 적용됩니다.`,
   });
 
   useEffect(() => {
@@ -107,15 +107,6 @@ const ContractTemplateForm = () => {
       toast.error("템플릿을 불러오는데 실패했습니다.");
       navigate("/contracts/templates");
     }
-  };
-
-  const toggleImage = (imageId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      image_urls: prev.image_urls.includes(imageId)
-        ? prev.image_urls.filter((id) => id !== imageId)
-        : [...prev.image_urls, imageId],
-    }));
   };
 
   const addPricingItem = () => {
@@ -240,43 +231,6 @@ const ContractTemplateForm = () => {
                   placeholder="템플릿에 대한 설명을 입력하세요"
                 />
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>라운지 이미지 선택</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {AVAILABLE_IMAGES.map((image) => (
-                  <div
-                    key={image.id}
-                    className="relative cursor-pointer group"
-                    onClick={() => toggleImage(image.id)}
-                  >
-                    <img
-                      src={image.src}
-                      alt={image.label}
-                      className={`w-full h-32 object-cover rounded-lg transition-all ${
-                        formData.image_urls.includes(image.id)
-                          ? "ring-4 ring-primary"
-                          : "opacity-70 hover:opacity-100"
-                      }`}
-                    />
-                    <div className="absolute top-2 right-2">
-                      <Checkbox
-                        checked={formData.image_urls.includes(image.id)}
-                        className="bg-white"
-                      />
-                    </div>
-                    <p className="text-sm text-center mt-1">{image.label}</p>
-                  </div>
-                ))}
-              </div>
-              <p className="text-sm text-muted-foreground mt-4">
-                선택한 이미지: {formData.image_urls.length}개
-              </p>
             </CardContent>
           </Card>
 
