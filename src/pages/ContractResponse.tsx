@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { toast } from "sonner";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 interface Contract {
   location: string;
@@ -42,6 +44,8 @@ const ContractResponse = () => {
   const [contract, setContract] = useState<Contract | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const contractRef = useRef<HTMLDivElement>(null);
   
   // Form state
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -166,6 +170,55 @@ const ContractResponse = () => {
     }
   };
 
+  const handleDownloadPDF = async () => {
+    if (!contractRef.current || !contract) return;
+    
+    setDownloading(true);
+    toast.info("PDF 생성 중...");
+    
+    try {
+      const canvas = await html2canvas(contractRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      const imgX = (pdfWidth - imgWidth * ratio) / 2;
+      
+      let heightLeft = imgHeight * ratio;
+      let position = 0;
+      
+      pdf.addImage(imgData, 'PNG', imgX, position, imgWidth * ratio, imgHeight * ratio);
+      heightLeft -= pdfHeight;
+      
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight * ratio;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', imgX, position, imgWidth * ratio, imgHeight * ratio);
+        heightLeft -= pdfHeight;
+      }
+      
+      const fileName = `모드라운지_계약서_${contract.customer_name || '고객'}_${format(new Date(contract.reservation_date), 'yyyyMMdd')}.pdf`;
+      pdf.save(fileName);
+      
+      toast.success("PDF 다운로드 완료!");
+    } catch (error) {
+      console.error("PDF 생성 오류:", error);
+      toast.error("PDF 생성 중 오류가 발생했습니다.");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ 
@@ -218,12 +271,14 @@ const ContractResponse = () => {
   };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      backgroundColor: 'white', 
-      padding: '40px',
-      fontFamily: 'sans-serif',
-      lineHeight: '1.8'
+    <div 
+      ref={contractRef}
+      style={{ 
+        minHeight: '100vh', 
+        backgroundColor: 'white', 
+        padding: '40px',
+        fontFamily: 'sans-serif',
+        lineHeight: '1.8'
     }}>
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '40px' }}>
@@ -641,23 +696,43 @@ const ContractResponse = () => {
           )}
 
           {contract.agreed && (
-            <div style={{
-              padding: '15px',
-              backgroundColor: '#e8f5e9',
-              border: '1px solid #4caf50',
-              borderRadius: '8px',
-              marginTop: '20px',
-              textAlign: 'center',
-            }}>
-              <p style={{ fontSize: '16px', fontWeight: 'bold', color: '#2e7d32' }}>
-                ✓ 서명이 완료되었습니다
-              </p>
-              {contract.submitted_at && (
-                <p style={{ fontSize: '14px', color: '#666', marginTop: '5px' }}>
-                  {format(new Date(contract.submitted_at), "yyyy년 M월 d일 HH:mm", { locale: ko })}
+            <>
+              <div style={{
+                padding: '15px',
+                backgroundColor: '#e8f5e9',
+                border: '1px solid #4caf50',
+                borderRadius: '8px',
+                marginTop: '20px',
+                textAlign: 'center',
+              }}>
+                <p style={{ fontSize: '16px', fontWeight: 'bold', color: '#2e7d32' }}>
+                  ✓ 서명이 완료되었습니다
                 </p>
-              )}
-            </div>
+                {contract.submitted_at && (
+                  <p style={{ fontSize: '14px', color: '#666', marginTop: '5px' }}>
+                    {format(new Date(contract.submitted_at), "yyyy년 M월 d일 HH:mm", { locale: ko })}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={handleDownloadPDF}
+                disabled={downloading}
+                style={{
+                  width: '100%',
+                  padding: '15px',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  color: 'white',
+                  backgroundColor: downloading ? '#999' : '#333',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: downloading ? 'not-allowed' : 'pointer',
+                  marginTop: '15px',
+                }}
+              >
+                {downloading ? "PDF 생성 중..." : "📄 계약서 PDF 다운로드"}
+              </button>
+            </>
           )}
         </div>
       </div>
