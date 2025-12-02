@@ -6,7 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Copy, CheckCircle, Clock, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Copy, CheckCircle, Clock, Search, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -81,6 +92,23 @@ const ContractsManage = () => {
     const link = `${window.location.origin}/contract/${accessToken}`;
     navigator.clipboard.writeText(link);
     toast.success("계약서 링크가 복사되었습니다.");
+  };
+
+  const deleteContract = async (contractId: string) => {
+    try {
+      const { error } = await supabase
+        .from("contracts")
+        .delete()
+        .eq("id", contractId);
+
+      if (error) throw error;
+      
+      setContracts(prev => prev.filter(c => c.id !== contractId));
+      toast.success("계약서가 삭제되었습니다.");
+    } catch (error) {
+      console.error("계약서 삭제 오류:", error);
+      toast.error("계약서 삭제에 실패했습니다.");
+    }
   };
 
   return (
@@ -210,6 +238,35 @@ const ContractsManage = () => {
                     >
                       미리보기
                     </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          삭제
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>계약서를 삭제하시겠습니까?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            "{contract.location}" ({contract.customer_name || "미작성"}) 계약서가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>취소</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => deleteContract(contract.id)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            삭제
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </CardContent>
               </Card>
