@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Calendar, MapPin, User, Building2 } from "lucide-react";
+import { Calendar, MapPin, User, Building2, Search } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -35,10 +36,21 @@ const OrdersAll = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchOrders();
   }, [statusFilter]);
+
+  const filteredOrders = useMemo(() => {
+    if (!searchQuery.trim()) return orders;
+    const query = searchQuery.toLowerCase();
+    return orders.filter(
+      (order) =>
+        order.order_number.toLowerCase().includes(query) ||
+        order.customer_name.toLowerCase().includes(query)
+    );
+  }, [orders, searchQuery]);
 
   const fetchOrders = async () => {
     try {
@@ -125,27 +137,38 @@ const OrdersAll = () => {
   return (
     <DashboardLayout currentPage="/orders/all">
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
               오더 전체보기
             </h1>
             <p className="text-muted-foreground mt-2">모든 제휴업체의 오더 현황을 확인하세요</p>
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="상태 필터" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">전체</SelectItem>
-              <SelectItem value="requested">요청됨</SelectItem>
-              <SelectItem value="accepted">수락됨</SelectItem>
-              <SelectItem value="confirmed">확정됨</SelectItem>
-              <SelectItem value="completed">완료</SelectItem>
-              <SelectItem value="settled">정산완료</SelectItem>
-              <SelectItem value="cancelled">취소</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="오더번호, 고객명 검색"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 w-full sm:w-[200px]"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-[140px]">
+                <SelectValue placeholder="상태 필터" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체</SelectItem>
+                <SelectItem value="requested">요청됨</SelectItem>
+                <SelectItem value="accepted">수락됨</SelectItem>
+                <SelectItem value="confirmed">확정됨</SelectItem>
+                <SelectItem value="completed">완료</SelectItem>
+                <SelectItem value="settled">정산완료</SelectItem>
+                <SelectItem value="cancelled">취소</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Status Guide */}
@@ -181,15 +204,17 @@ const OrdersAll = () => {
           </CardContent>
         </Card>
 
-        {orders.length === 0 ? (
+        {filteredOrders.length === 0 ? (
           <Card>
             <CardContent className="text-center py-12">
-              <p className="text-muted-foreground">해당 조건의 오더가 없습니다.</p>
+              <p className="text-muted-foreground">
+                {searchQuery ? "검색 결과가 없습니다." : "해당 조건의 오더가 없습니다."}
+              </p>
             </CardContent>
           </Card>
         ) : (
           <div className="grid gap-4">
-            {orders.map((order) => (
+            {filteredOrders.map((order) => (
               <Card key={order.id} className="hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
