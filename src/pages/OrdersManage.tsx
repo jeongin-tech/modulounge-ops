@@ -43,6 +43,8 @@ interface OrderFile {
   created_at: string;
 }
 
+const ITEMS_PER_PAGE = 20;
+
 const OrdersManage = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,10 +56,15 @@ const OrdersManage = () => {
   const [filesLoading, setFilesLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     fetchOrders();
   }, [statusFilter]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
 
   useEffect(() => {
     if (selectedOrder) {
@@ -104,6 +111,12 @@ const OrdersManage = () => {
         order.customer_name.toLowerCase().includes(query)
     );
   }, [orders, searchQuery]);
+
+  const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
+  const paginatedOrders = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredOrders.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredOrders, currentPage]);
 
   const fetchFiles = async (orderId: string) => {
     setFilesLoading(true);
@@ -339,8 +352,13 @@ const OrdersManage = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-6">
-            {filteredOrders.map((order) => (
+          <>
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>총 {filteredOrders.length}건</span>
+              <span>{currentPage} / {totalPages} 페이지</span>
+            </div>
+            <div className="grid gap-6">
+              {paginatedOrders.map((order) => (
               <Card key={order.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between">
@@ -567,7 +585,55 @@ const OrdersManage = () => {
                 </CardContent>
               </Card>
             ))}
-          </div>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  이전
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        className="w-9"
+                        onClick={() => setCurrentPage(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  다음
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </DashboardLayout>
