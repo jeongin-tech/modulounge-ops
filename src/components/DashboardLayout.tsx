@@ -22,6 +22,7 @@ import {
   Calculator,
   Tag,
   User as UserIcon,
+  MessageCircle,
 } from "lucide-react";
 import ChannelTalk from "@/components/ChannelTalk";
 import NotificationBell from "@/components/NotificationBell";
@@ -240,6 +241,12 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
       label: "사용가이드",
       path: "/guide",
       roles: ["STAFF", "PARTNER"],
+    },
+    {
+      icon: <MessageCircle className="h-5 w-5" />,
+      label: "고객 채널톡 응대",
+      path: "/channel-desk",
+      roles: ["STAFF"],
     },
     {
       icon: <UserIcon className="h-5 w-5" />,
