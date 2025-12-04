@@ -307,41 +307,84 @@ const CalendarView = () => {
             />
           </div>
 
-          {/* Sidebar - Today's Events */}
+          {/* Sidebar - Today's Timeline */}
           <div className="bg-card rounded-lg border p-6">
             <h3 className="font-semibold mb-4 text-lg">
-              오늘의 일정
+              {selectedDate?.toLocaleDateString("ko-KR", { month: "long", day: "numeric" })} 일정
             </h3>
             {selectedDateEvents.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <p>일정이 없습니다</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {selectedDateEvents.map((event) => (
-                  <div
-                    key={event.id}
-                    className="p-3 border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
-                    onClick={() => handleEditEvent(event)}
-                    style={{ borderLeftWidth: "3px", borderLeftColor: getEventTypeColor(event.event_type) }}
-                  >
-                    <div className="flex items-start justify-between mb-1">
-                      <p className="font-semibold text-sm line-clamp-1">{event.title}</p>
-                      <Badge variant="secondary" className="text-xs ml-2 shrink-0">
-                        {event.event_type}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {event.is_all_day 
-                        ? "종일" 
-                        : new Date(event.start_time).toLocaleTimeString("ko-KR", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                      }
-                    </p>
+              <div className="relative">
+                {/* 타임라인 */}
+                <div className="space-y-0">
+                  {Array.from({ length: 15 }, (_, i) => i + 8).map((hour) => {
+                    const hourEvents = selectedDateEvents.filter((event) => {
+                      if (event.is_all_day) return false;
+                      const eventHour = new Date(event.start_time).getHours();
+                      return eventHour === hour;
+                    });
+                    
+                    return (
+                      <div key={hour} className="flex min-h-[48px]">
+                        {/* 시간 라벨 */}
+                        <div className="w-12 text-xs text-muted-foreground shrink-0 pt-1">
+                          {hour.toString().padStart(2, "0")}:00
+                        </div>
+                        {/* 이벤트 영역 */}
+                        <div className="flex-1 border-l border-border pl-3 pb-2">
+                          {hourEvents.map((event) => (
+                            <div
+                              key={event.id}
+                              className="p-2 rounded-md mb-1 cursor-pointer hover:opacity-80 transition-opacity"
+                              style={{ 
+                                backgroundColor: getEventTypeColor(event.event_type) + '20',
+                                borderLeft: `3px solid ${getEventTypeColor(event.event_type)}`
+                              }}
+                              onClick={() => handleEditEvent(event)}
+                            >
+                              <p className="font-medium text-xs line-clamp-1">{event.title}</p>
+                              <p className="text-[10px] text-muted-foreground">
+                                {new Date(event.start_time).toLocaleTimeString("ko-KR", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })} - {new Date(event.end_time).toLocaleTimeString("ko-KR", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* 종일 이벤트 */}
+                {selectedDateEvents.filter(e => e.is_all_day).length > 0 && (
+                  <div className="mt-4 pt-4 border-t">
+                    <p className="text-xs text-muted-foreground mb-2">종일</p>
+                    {selectedDateEvents.filter(e => e.is_all_day).map((event) => (
+                      <div
+                        key={event.id}
+                        className="p-2 rounded-md mb-1 cursor-pointer hover:opacity-80 transition-opacity"
+                        style={{ 
+                          backgroundColor: getEventTypeColor(event.event_type) + '20',
+                          borderLeft: `3px solid ${getEventTypeColor(event.event_type)}`
+                        }}
+                        onClick={() => handleEditEvent(event)}
+                      >
+                        <p className="font-medium text-xs">{event.title}</p>
+                        <Badge variant="secondary" className="text-[10px] mt-1">
+                          {event.event_type}
+                        </Badge>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
             )}
           </div>
