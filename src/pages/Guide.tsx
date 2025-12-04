@@ -94,7 +94,7 @@ const Guide = () => {
                 <div className="space-y-2">
                   <p className="font-semibold text-primary">⚙️ 시스템</p>
                   <p>• 사용자 관리 - 사용자 등록/수정/삭제</p>
-                  <p>• 시스템 설정 - 슬랙 연동 등 설정</p>
+                  <p>• 시스템 설정 - 시스템 환경 설정</p>
                 </div>
               </div>
             </CardContent>
@@ -421,116 +421,15 @@ const Guide = () => {
                         <li>"사용자 등록" 버튼 클릭</li>
                         <li>이메일, 이름, 역할(STAFF/PARTNER) 선택</li>
                         <li>제휴업체인 경우: 업체명, 서비스유형, 지역, 수수료율 입력</li>
-                        <li>Slack 채널 ID 입력 (메시지 연동용)</li>
                       </ol>
                     </div>
                     <div className="space-y-2">
                       <h4 className="font-semibold">설정 항목</h4>
                       <ul className="list-disc list-inside space-y-1">
                         <li><strong>수수료율</strong> - 정산 시 적용할 수수료 비율</li>
-                        <li><strong>Slack 채널 ID</strong> - 메시지 전송 대상 채널</li>
-                        <li><strong>Slack User ID</strong> - 내부직원 멘션용 (STAFF)</li>
+                        <li><strong>서비스 지역</strong> - 담당 지역 설정</li>
+                        <li><strong>서비스 유형</strong> - 제공 서비스 종류</li>
                       </ul>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              )}
-
-              {!isPartner && (
-                <AccordionItem value="slack">
-                  <AccordionTrigger className="text-left">
-                    🔗 슬랙(Slack) 연동 설정
-                  </AccordionTrigger>
-                  <AccordionContent className="space-y-4 text-sm">
-                    <div className="bg-muted p-4 rounded-lg">
-                      <p className="font-semibold text-destructive mb-2">⚠️ 중요</p>
-                      <p>제휴업체와 메시지 소통을 위해서는 슬랙 연동이 필수입니다.</p>
-                    </div>
-
-                    <div className="space-y-3">
-                      <h4 className="font-semibold">1. Slack App 생성</h4>
-                      <ol className="list-decimal list-inside space-y-2 ml-2">
-                        <li>
-                          <a 
-                            href="https://api.slack.com/apps" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-primary underline"
-                          >
-                            Slack API 페이지
-                          </a>
-                          에 접속합니다.
-                        </li>
-                        <li>"Create New App" 클릭 → "From scratch" 선택</li>
-                        <li>App 이름 입력 (예: 모드라운지봇) 후 워크스페이스 선택</li>
-                      </ol>
-                    </div>
-
-                    <div className="space-y-3">
-                      <h4 className="font-semibold">2. Bot Token Scopes 설정</h4>
-                      <ol className="list-decimal list-inside space-y-2 ml-2">
-                        <li>좌측 메뉴에서 "OAuth & Permissions" 클릭</li>
-                        <li>"Scopes" 섹션에서 "Bot Token Scopes" 찾기</li>
-                        <li>
-                          아래 권한들을 추가:
-                          <ul className="list-disc list-inside ml-4 mt-1 text-muted-foreground">
-                            <li>chat:write - 메시지 전송</li>
-                            <li>channels:read - 채널 정보 읽기</li>
-                            <li>users:read - 사용자 정보 읽기</li>
-                            <li>users:read.email - 사용자 이메일 읽기</li>
-                          </ul>
-                        </li>
-                      </ol>
-                    </div>
-
-                    <div className="space-y-3">
-                      <h4 className="font-semibold">3. Event Subscriptions 설정</h4>
-                      <ol className="list-decimal list-inside space-y-2 ml-2">
-                        <li>좌측 메뉴에서 "Event Subscriptions" 클릭</li>
-                        <li>"Enable Events" 토글 ON</li>
-                        <li>
-                          Request URL에 입력:
-                          <code className="block bg-muted px-2 py-1 rounded mt-1 text-xs break-all">
-                            https://hunwnggzidopjhovvika.supabase.co/functions/v1/slack-events
-                          </code>
-                        </li>
-                        <li>
-                          "Subscribe to bot events"에서 추가:
-                          <ul className="list-disc list-inside ml-4 mt-1 text-muted-foreground">
-                            <li>message.channels - 채널 메시지 수신</li>
-                          </ul>
-                        </li>
-                      </ol>
-                    </div>
-
-                    <div className="space-y-3">
-                      <h4 className="font-semibold">4. App 설치 및 토큰 발급</h4>
-                      <ol className="list-decimal list-inside space-y-2 ml-2">
-                        <li>"OAuth & Permissions"로 이동</li>
-                        <li>"Install to Workspace" 클릭 후 허용</li>
-                        <li>"Bot User OAuth Token" 복사 (xoxb-로 시작)</li>
-                        <li>이 토큰을 시스템 설정에 저장</li>
-                      </ol>
-                    </div>
-
-                    <div className="space-y-3">
-                      <h4 className="font-semibold">5. 제휴업체별 채널 연결</h4>
-                      <ol className="list-decimal list-inside space-y-2 ml-2">
-                        <li>Slack에서 제휴업체별 채널 생성 (예: #partner-업체명)</li>
-                        <li>생성한 채널에 봇 앱 초대 (/invite @봇이름)</li>
-                        <li>
-                          채널 ID 확인: 채널명 우클릭 → "채널 세부정보 보기" → 하단 ID
-                        </li>
-                        <li>
-                          <strong>사용자 관리</strong>에서 해당 업체의 Slack 채널 ID 입력
-                        </li>
-                      </ol>
-                    </div>
-
-                    <div className="bg-primary/10 p-4 rounded-lg">
-                      <p className="font-semibold mb-2">✅ 연동 완료 후</p>
-                      <p>• ADMIN에서 메시지 전송 → 해당 업체 Slack 채널로 전달</p>
-                      <p>• Slack에서 답장 → ADMIN에 표시</p>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
