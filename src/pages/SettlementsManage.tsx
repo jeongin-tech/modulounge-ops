@@ -13,8 +13,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Building2, Calendar, DollarSign, CheckCircle, Search } from "lucide-react";
+import { Building2, Calendar, DollarSign, CheckCircle, Search, Trash2 } from "lucide-react";
 
 interface Order {
   id: string;
@@ -55,6 +66,8 @@ const SettlementsManage = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
     fetchSettlements();
@@ -181,6 +194,59 @@ const SettlementsManage = () => {
     }
   };
 
+  const handleSelectItem = (orderId: string, checked: boolean) => {
+    const newSelected = new Set(selectedItems);
+    if (checked) {
+      newSelected.add(orderId);
+    } else {
+      newSelected.delete(orderId);
+    }
+    setSelectedItems(newSelected);
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = paginatedItems.map((item) => item.order.id);
+      setSelectedItems(new Set(allIds));
+    } else {
+      setSelectedItems(new Set());
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      const selectedArray = Array.from(selectedItems);
+      
+      for (const orderId of selectedArray) {
+        const item = items.find((i) => i.order.id === orderId);
+        if (!item) continue;
+
+        // Delete settlement if exists
+        if (item.settlement) {
+          await supabase
+            .from("settlements")
+            .delete()
+            .eq("id", item.settlement.id);
+        }
+
+        // Update order status back to completed
+        await supabase
+          .from("orders")
+          .update({ status: "completed" })
+          .eq("id", orderId);
+      }
+
+      toast.success(`${selectedArray.length}건의 정산이 삭제되었습니다.`);
+      setSelectedItems(new Set());
+      setShowDeleteDialog(false);
+      fetchSettlements();
+    } catch (error) {
+      toast.error("정산 삭제에 실패했습니다.");
+    }
+  };
+
+  const isAllSelected = paginatedItems.length > 0 && paginatedItems.every((item) => selectedItems.has(item.order.id));
+
   if (loading) {
     return (
       <DashboardLayout currentPage="/settlements/manage">
@@ -236,23 +302,54 @@ const SettlementsManage = () => {
           </Card>
         ) : (
           <>
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>총 {filteredItems.length}건</span>
-              <span>{currentPage} / {totalPages} 페이지</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={isAllSelected}
+                    onCheckedChange={handleSelectAll}
+                    id="select-all"
+                  />
+                  <label htmlFor="select-all" className="text-sm text-muted-foreground cursor-pointer">
+                    전체 선택
+                  </label>
+                </div>
+                {selectedItems.size > 0 && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setShowDeleteDialog(true)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    선택 삭제 ({selectedItems.size})
+                  </Button>
+                )}
+              </div>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <span>총 {filteredItems.length}건</span>
+                <span>{currentPage} / {totalPages} 페이지</span>
+              </div>
             </div>
             <div className="grid gap-6">
               {paginatedItems.map((item) => (
-                <Card key={item.order.id} className="hover:shadow-lg transition-shadow">
+                <Card key={item.order.id} className={`hover:shadow-lg transition-shadow ${selectedItems.has(item.order.id) ? "ring-2 ring-primary" : ""}`}>
                   <CardHeader>
                     <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="flex items-center gap-2">
-                          <span>{item.order.order_number}</span>
-                          <Badge variant="secondary">{item.order.service_type}</Badge>
-                        </CardTitle>
-                        <CardDescription className="mt-2">
-                          완료일: {new Date(item.order.completed_at).toLocaleDateString("ko-KR")}
-                        </CardDescription>
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          checked={selectedItems.has(item.order.id)}
+                          onCheckedChange={(checked) => handleSelectItem(item.order.id, checked as boolean)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            <span>{item.order.order_number}</span>
+                            <Badge variant="secondary">{item.order.service_type}</Badge>
+                          </CardTitle>
+                          <CardDescription className="mt-2">
+                            완료일: {new Date(item.order.completed_at).toLocaleDateString("ko-KR")}
+                          </CardDescription>
+                        </div>
                       </div>
                       {item.status === "confirmed" ? (
                         <Badge className="bg-green-500">
@@ -387,6 +484,23 @@ const SettlementsManage = () => {
             )}
           </>
         )}
+
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>선택한 정산을 삭제하시겠습니까?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {selectedItems.size}건의 정산이 삭제됩니다. 정산이 확정된 오더는 완료 상태로 되돌아갑니다.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>취소</AlertDialogCancel>
+              <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                확인
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DashboardLayout>
   );
