@@ -43,12 +43,12 @@ const Partners = () => {
           .select("*", { count: "exact", head: true })
           .eq("partner_id", partner.id);
 
-        // Get completed orders
+        // Get completed orders (including settled)
         const { count: completedCount } = await supabase
           .from("orders")
           .select("*", { count: "exact", head: true })
           .eq("partner_id", partner.id)
-          .eq("status", "completed");
+          .in("status", ["completed", "settled"]);
 
         // Get total revenue from settlements
         const { data: settlements } = await supabase
