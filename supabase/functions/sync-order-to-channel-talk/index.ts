@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,20 +9,8 @@ const corsHeaders = {
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const channelTalkApiSecret = Deno.env.get('CHANNEL_TALK_APP_SECRET')!;
-
-interface Order {
-  id: string;
-  order_number: string;
-  partner_id: string;
-  customer_name: string;
-  service_type: string;
-  service_location: string;
-  service_date: string;
-  amount: number | null;
-  status: string;
-  created_at: string;
-}
+const channelTalkAppId = Deno.env.get('CHANNEL_TALK_APP_ID')!;
+const channelTalkAppSecret = Deno.env.get('CHANNEL_TALK_APP_SECRET')!;
 
 serve(async (req) => {
   console.log('[Sync Order to Channel Talk] Request received:', req.method);
@@ -59,7 +48,7 @@ serve(async (req) => {
       });
     }
 
-    // Fetch partner profile for Channel Talk memberId
+    // Fetch partner profile
     const { data: partner, error: partnerError } = await supabase
       .from('profiles')
       .select('id, email, full_name')
@@ -84,73 +73,52 @@ serve(async (req) => {
       cancelled: '취소',
     };
 
-    const orderData = {
-      id: order.id,
-      name: `${order.service_type} - ${order.order_number}`,
-      status: statusLabels[order.status] || order.status,
-      amount: order.amount || 0,
-      currency: 'KRW',
-      orderedAt: new Date(order.created_at).getTime(),
-      items: [
-        {
-          name: order.service_type,
-          quantity: 1,
-          amount: order.amount || 0,
-        }
-      ],
-      custom: {
-        order_number: order.order_number,
-        service_location: order.service_location,
-        service_date: order.service_date,
-        customer_name: order.customer_name,
-      }
-    };
+    // Basic Auth header for Channel Talk API
+    const credentials = base64Encode(`${channelTalkAppId}:${channelTalkAppSecret}`);
+    const authHeader = `Basic ${credentials}`;
 
-    // Send to Channel Talk User API
-    const channelTalkResponse = await fetch(
-      `https://api.channel.io/open/v5/users/${partner.id}/events`,
+    console.log('[Sync Order] Updating Channel Talk user profile for:', partner.email);
+
+    // Update user profile with order information
+    // Channel Talk uses email as the key to find users
+    const updateResponse = await fetch(
+      `https://api.channel.io/open/v5/users/@${encodeURIComponent(partner.email)}`,
       {
-        method: 'POST',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'X-Access-Key': channelTalkApiSecret,
+          'Authorization': authHeader,
         },
         body: JSON.stringify({
-          event: 'Order',
-          property: orderData,
+          profile: {
+            lastOrderNumber: order.order_number,
+            lastOrderStatus: statusLabels[order.status] || order.status,
+            lastOrderAmount: order.amount || 0,
+            lastOrderDate: order.service_date,
+            lastOrderServiceType: order.service_type,
+            lastOrderLocation: order.service_location,
+          },
         }),
       }
     );
 
-    if (!channelTalkResponse.ok) {
-      const errorText = await channelTalkResponse.text();
+    if (!updateResponse.ok) {
+      const errorText = await updateResponse.text();
       console.error('[Sync Order] Channel Talk API error:', errorText);
       
-      // Try alternative: Update user profile with order info
-      const updateResponse = await fetch(
-        `https://api.channel.io/open/v5/users/${partner.id}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Access-Key': channelTalkApiSecret,
-          },
-          body: JSON.stringify({
-            profile: {
-              lastOrderNumber: order.order_number,
-              lastOrderStatus: statusLabels[order.status] || order.status,
-              lastOrderAmount: order.amount || 0,
-              lastOrderDate: order.service_date,
-            },
-          }),
-        }
-      );
-
-      if (!updateResponse.ok) {
-        console.error('[Sync Order] Channel Talk profile update error:', await updateResponse.text());
-      }
+      // Still return success as the order was created in our system
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: 'Order created but Channel Talk sync had issues',
+        orderId: order.id,
+        channelTalkError: errorText,
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
+    const responseData = await updateResponse.json();
+    console.log('[Sync Order] Channel Talk response:', JSON.stringify(responseData));
     console.log('[Sync Order] Successfully synced order to Channel Talk');
     
     return new Response(JSON.stringify({ 
