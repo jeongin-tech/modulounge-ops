@@ -9,7 +9,6 @@ import {
   ClipboardList,
   Calendar,
   DollarSign,
-  MessageSquare,
   Users,
   Settings,
   LogOut,
@@ -22,6 +21,7 @@ import {
   Calculator,
   Tag,
 } from "lucide-react";
+import ChannelTalk from "@/components/ChannelTalk";
 import logo from "@/assets/logo.jpg";
 import { toast } from "sonner";
 
@@ -176,12 +176,6 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
       roles: ["STAFF"],
     },
     {
-      icon: <MessageSquare className="h-5 w-5" />,
-      label: "C/S",
-      path: "/messages",
-      roles: ["STAFF", "PARTNER"],
-    },
-    {
       icon: <BookOpen className="h-5 w-5" />,
       label: "사용가이드",
       path: "/guide",
@@ -284,6 +278,17 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
       <main className="lg:ml-64 p-4 lg:p-8">
         {children}
       </main>
+
+      {/* Channel Talk for Partners */}
+      {userRole === "PARTNER" && user && (
+        <ChannelTalk
+          pluginKey="2bd3ebee-2b8d-42b6-b670-9dacfe932c06"
+          user={{
+            id: user.id,
+            email: user.email || "",
+          }}
+        />
+      )}
     </div>
   );
 };
