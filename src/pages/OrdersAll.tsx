@@ -153,6 +153,9 @@ const OrdersAll = () => {
 
   const handleConfirmOrder = async (orderId: string) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("로그인이 필요합니다.");
+
       // Get order details first
       const order = orders.find((o) => o.id === orderId);
       if (!order) throw new Error("오더를 찾을 수 없습니다.");
@@ -164,6 +167,28 @@ const OrdersAll = () => {
 
       if (error) throw error;
 
+      // 캘린더 이벤트 생성
+      const serviceDate = new Date(order.service_date);
+      const endDate = new Date(serviceDate);
+      endDate.setHours(endDate.getHours() + 2); // 기본 2시간 일정
+
+      const { error: calendarError } = await supabase
+        .from("calendar_events")
+        .insert({
+          title: `[${order.service_type}] ${order.customer_name}`,
+          start_time: serviceDate.toISOString(),
+          end_time: endDate.toISOString(),
+          event_type: order.service_type,
+          location: order.service_location,
+          description: `주문번호: ${order.order_number}\n금액: ₩${order.amount?.toLocaleString()}\n제휴업체: ${order.partner_profile?.company_name || order.partner_profile?.full_name}`,
+          created_by: user.id,
+          color: "#3b82f6",
+        });
+
+      if (calendarError) {
+        console.error("캘린더 이벤트 생성 실패:", calendarError);
+      }
+
       // Create notification for partner
       await supabase.from("notifications").insert({
         user_id: order.partner_id,
@@ -173,7 +198,7 @@ const OrdersAll = () => {
         related_order_id: orderId,
       });
 
-      toast.success("오더가 확정되었습니다!");
+      toast.success("오더가 확정되고 일정이 등록되었습니다!");
       fetchOrders();
     } catch (error: any) {
       toast.error("오더 확정에 실패했습니다.");

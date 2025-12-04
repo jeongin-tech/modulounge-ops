@@ -127,11 +127,10 @@ const Guide = () => {
                         </ul>
                       </li>
                       <li>오더 내용 확인 후 <strong>"수락"</strong> 또는 <strong>"거절"</strong> 버튼 클릭</li>
-                      <li>수락 시 자동으로 캘린더에 일정이 등록됩니다</li>
                     </ol>
                     <div className="bg-yellow-50 dark:bg-yellow-950/20 p-3 rounded-lg">
                       <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                        ⚠️ 오더 수락 후에는 관리자 확정을 기다려주세요.
+                        ⚠️ 오더 수락 후에는 관리자 확정을 기다려주세요. 확정 시 캘린더에 일정이 자동 등록됩니다.
                       </p>
                     </div>
                   </AccordionContent>
@@ -338,7 +337,7 @@ const Guide = () => {
                       <ol className="list-decimal list-inside space-y-1">
                         <li>모든 오더 현황 조회</li>
                         <li>상태별 필터링 (요청됨/수락됨/확정됨/완료됨)</li>
-                        <li>제휴업체가 수락한 오더 "확정" 처리</li>
+                        <li>제휴업체가 수락한 오더 "확정" 처리 (캘린더 일정 자동 등록)</li>
                         <li>첨부파일 확인 및 관리</li>
                       </ol>
                     </div>
@@ -450,7 +449,7 @@ const Guide = () => {
                   {isPartner && (
                     <div className="bg-muted p-3 rounded-lg">
                       <p className="text-sm">
-                        💡 오더 수락 시 자동으로 캘린더에 일정이 등록됩니다.
+                        💡 관리자가 오더 확정 시 자동으로 캘린더에 일정이 등록됩니다.
                       </p>
                     </div>
                   )}
