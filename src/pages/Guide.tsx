@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import {
   Accordion,
@@ -9,53 +11,94 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 const Guide = () => {
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+        if (profile) {
+          setUserRole(profile.role);
+        }
+      }
+    };
+    fetchUserRole();
+  }, []);
+
+  const isPartner = userRole === "PARTNER";
+
   return (
     <DashboardLayout currentPage="/guide">
       <div className="space-y-6 max-w-4xl">
         <div>
           <h1 className="text-3xl font-bold">사용 가이드</h1>
           <p className="text-muted-foreground mt-2">
-            모드라운지 ADMIN 시스템 사용 방법을 안내합니다.
+            {isPartner 
+              ? "모드라운지 파트너 시스템 사용 방법을 안내합니다."
+              : "모드라운지 ADMIN 시스템 사용 방법을 안내합니다."}
           </p>
         </div>
 
         {/* 역할별 기능 안내 */}
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Badge>STAFF</Badge>
-                내부직원 기능
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <p>• 오더 요청 - 제휴업체에 새로운 오더 요청</p>
-              <p>• 오더 전체보기 - 모든 오더 현황 조회</p>
-              <p>• 정산 관리 - 제휴업체 정산 처리</p>
-              <p>• 제휴업체 응답률관리 - 업체별 현황 확인</p>
-              <p>• 사용자 관리 - 사용자 등록/수정/삭제</p>
-              <p>• 전자서명관리 - 계약서 생성 및 관리</p>
-              <p>• 견적서 작성 - 견적서 생성</p>
-              <p>• 공간검색 - 공간 검색 도구</p>
-            </CardContent>
-          </Card>
-
+        {isPartner ? (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Badge variant="secondary">PARTNER</Badge>
-                제휴업체 기능
+                파트너 기능 안내
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
-              <p>• 오더 수락 - 새로운 오더 확인 및 수락</p>
-              <p>• 오더 관리 - 진행 중인 오더 관리</p>
+              <p>• 오더 수락 - 새로운 오더 확인 및 수락/거절</p>
+              <p>• 오더 관리 - 진행 중인 오더 관리 및 완료 처리</p>
               <p>• 정산 현황 - 본인 정산 내역 확인</p>
               <p>• 일정 보기 - 예약된 일정 캘린더 확인</p>
               <p>• C/S - 내부직원과 메시지 소통</p>
             </CardContent>
           </Card>
-        </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Badge>STAFF</Badge>
+                  내부직원 기능
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <p>• 오더 요청 - 제휴업체에 새로운 오더 요청</p>
+                <p>• 오더 전체보기 - 모든 오더 현황 조회</p>
+                <p>• 정산 관리 - 제휴업체 정산 처리</p>
+                <p>• 제휴업체 응답률관리 - 업체별 현황 확인</p>
+                <p>• 사용자 관리 - 사용자 등록/수정/삭제</p>
+                <p>• 전자서명관리 - 계약서 생성 및 관리</p>
+                <p>• 견적서 작성 - 견적서 생성</p>
+                <p>• 공간검색 - 공간 검색 도구</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Badge variant="secondary">PARTNER</Badge>
+                  제휴업체 기능
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <p>• 오더 수락 - 새로운 오더 확인 및 수락</p>
+                <p>• 오더 관리 - 진행 중인 오더 관리</p>
+                <p>• 정산 현황 - 본인 정산 내역 확인</p>
+                <p>• 일정 보기 - 예약된 일정 캘린더 확인</p>
+                <p>• C/S - 내부직원과 메시지 소통</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* 상세 가이드 */}
         <Card>
@@ -64,198 +107,322 @@ const Guide = () => {
           </CardHeader>
           <CardContent>
             <Accordion type="single" collapsible className="w-full">
-              {/* 슬랙 연동 가이드 */}
-              <AccordionItem value="slack">
-                <AccordionTrigger className="text-left">
-                  🔗 슬랙(Slack) 연동 설정 방법
-                </AccordionTrigger>
-                <AccordionContent className="space-y-4 text-sm">
-                  <div className="bg-muted p-4 rounded-lg">
-                    <p className="font-semibold text-destructive mb-2">⚠️ 중요</p>
-                    <p>제휴업체와 메시지 소통을 위해서는 슬랙 연동이 필수입니다.</p>
-                  </div>
-
-                  <div className="space-y-3">
-                    <h4 className="font-semibold">1. Slack App 생성</h4>
-                    <ol className="list-decimal list-inside space-y-2 ml-2">
-                      <li>
-                        <a 
-                          href="https://api.slack.com/apps" 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-primary underline"
-                        >
-                          Slack API 페이지
-                        </a>
-                        에 접속합니다.
-                      </li>
-                      <li>"Create New App" 클릭 → "From scratch" 선택</li>
-                      <li>App 이름 입력 (예: 모드라운지봇) 후 워크스페이스 선택</li>
-                    </ol>
-                  </div>
-
-                  <div className="space-y-3">
-                    <h4 className="font-semibold">2. Bot Token Scopes 설정</h4>
-                    <ol className="list-decimal list-inside space-y-2 ml-2">
-                      <li>좌측 메뉴에서 "OAuth & Permissions" 클릭</li>
-                      <li>"Scopes" 섹션에서 "Bot Token Scopes" 찾기</li>
-                      <li>
-                        아래 권한들을 추가:
-                        <ul className="list-disc list-inside ml-4 mt-1 text-muted-foreground">
-                          <li>chat:write - 메시지 전송</li>
-                          <li>channels:read - 채널 정보 읽기</li>
-                          <li>users:read - 사용자 정보 읽기</li>
-                          <li>users:read.email - 사용자 이메일 읽기</li>
-                        </ul>
-                      </li>
-                    </ol>
-                  </div>
-
-                  <div className="space-y-3">
-                    <h4 className="font-semibold">3. Event Subscriptions 설정 (메시지 수신용)</h4>
-                    <ol className="list-decimal list-inside space-y-2 ml-2">
-                      <li>좌측 메뉴에서 "Event Subscriptions" 클릭</li>
-                      <li>"Enable Events" 토글 ON</li>
-                      <li>
-                        Request URL에 Edge Function URL 입력:
-                        <code className="block bg-muted px-2 py-1 rounded mt-1 text-xs break-all">
-                          https://hunwnggzidopjhovvika.supabase.co/functions/v1/slack-events
-                        </code>
-                      </li>
-                      <li>
-                        "Subscribe to bot events"에서 추가:
-                        <ul className="list-disc list-inside ml-4 mt-1 text-muted-foreground">
-                          <li>message.channels - 채널 메시지 수신</li>
-                        </ul>
-                      </li>
-                    </ol>
-                  </div>
-
-                  <div className="space-y-3">
-                    <h4 className="font-semibold">4. App 설치 및 토큰 발급</h4>
-                    <ol className="list-decimal list-inside space-y-2 ml-2">
-                      <li>"OAuth & Permissions"로 이동</li>
-                      <li>"Install to Workspace" 클릭 후 허용</li>
-                      <li>"Bot User OAuth Token" 복사 (xoxb-로 시작)</li>
-                      <li>이 토큰을 시스템 설정에 저장</li>
-                    </ol>
-                  </div>
-
-                  <div className="space-y-3">
-                    <h4 className="font-semibold">5. 제휴업체별 채널 생성 및 연결</h4>
-                    <ol className="list-decimal list-inside space-y-2 ml-2">
-                      <li>Slack에서 제휴업체별 채널 생성 (예: #partner-업체명)</li>
-                      <li>생성한 채널에 봇 앱 초대 (/invite @봇이름)</li>
-                      <li>
-                        채널 ID 확인 방법:
-                        <ul className="list-disc list-inside ml-4 mt-1 text-muted-foreground">
-                          <li>채널명 우클릭 → "채널 세부정보 보기"</li>
-                          <li>하단에 채널 ID 표시 (C로 시작하는 영문숫자)</li>
-                        </ul>
-                      </li>
-                      <li>
-                        <span className="font-medium">사용자 관리</span>에서 해당 제휴업체의 
-                        <span className="font-medium text-primary"> Slack 채널 ID</span> 입력
-                      </li>
-                    </ol>
-                  </div>
-
-                  <div className="space-y-3">
-                    <h4 className="font-semibold">6. 내부직원 Slack User ID 설정</h4>
-                    <ol className="list-decimal list-inside space-y-2 ml-2">
-                      <li>
-                        Slack User ID 확인 방법:
-                        <ul className="list-disc list-inside ml-4 mt-1 text-muted-foreground">
-                          <li>Slack에서 본인 프로필 클릭</li>
-                          <li>"프로필 보기" 클릭</li>
-                          <li>더보기(⋯) → "멤버 ID 복사"</li>
-                        </ul>
-                      </li>
-                      <li>
-                        <span className="font-medium">사용자 관리</span>에서 내부직원의 
-                        <span className="font-medium text-primary"> Slack User ID</span> 입력
-                      </li>
-                    </ol>
-                  </div>
-
-                  <div className="bg-primary/10 p-4 rounded-lg">
-                    <p className="font-semibold mb-2">✅ 연동 완료 후</p>
-                    <p>• ADMIN에서 메시지 전송 시 → 해당 업체 Slack 채널로 전달</p>
-                    <p>• Slack 채널에서 답장 시 → ADMIN C/S 화면에 표시</p>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-
-              {/* 오더 관리 가이드 */}
-              <AccordionItem value="orders">
-                <AccordionTrigger className="text-left">
-                  📋 오더 관리 프로세스
-                </AccordionTrigger>
-                <AccordionContent className="space-y-3 text-sm">
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">오더 상태 흐름</h4>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="outline">요청됨</Badge>
-                      <span>→</span>
-                      <Badge variant="outline">수락됨</Badge>
-                      <span>→</span>
-                      <Badge variant="outline">확정됨</Badge>
-                      <span>→</span>
-                      <Badge variant="outline">완료됨</Badge>
-                      <span>→</span>
-                      <Badge variant="outline">정산완료</Badge>
+              {/* 파트너용 오더 수락 가이드 */}
+              {isPartner && (
+                <AccordionItem value="order-accept">
+                  <AccordionTrigger className="text-left">
+                    📥 오더 수락 방법
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 text-sm">
+                    <div className="bg-primary/10 p-4 rounded-lg">
+                      <p className="font-semibold mb-2">💡 오더 수락 프로세스</p>
+                      <p>새로운 오더가 들어오면 "오더 수락" 메뉴에서 확인할 수 있습니다.</p>
                     </div>
-                  </div>
-                  <div>
-                    <p className="font-semibold">STAFF:</p>
-                    <p>오더 요청 → 제휴업체 선택 → 서비스 정보 입력 → 요청</p>
-                  </div>
-                  <div>
-                    <p className="font-semibold">PARTNER:</p>
-                    <p>오더 수락에서 확인 → 수락/거절 → 오더 관리에서 진행상황 업데이트</p>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
+                    <ol className="list-decimal list-inside space-y-2">
+                      <li>좌측 메뉴에서 <strong>"오더 수락"</strong> 클릭</li>
+                      <li>새로운 오더 목록에서 상세 정보 확인
+                        <ul className="list-disc list-inside ml-4 mt-1 text-muted-foreground">
+                          <li>고객명, 서비스 유형, 일정, 장소, 금액</li>
+                        </ul>
+                      </li>
+                      <li>오더 내용 확인 후 <strong>"수락"</strong> 또는 <strong>"거절"</strong> 버튼 클릭</li>
+                      <li>수락 시 자동으로 캘린더에 일정이 등록됩니다</li>
+                    </ol>
+                    <div className="bg-yellow-50 dark:bg-yellow-950/20 p-3 rounded-lg">
+                      <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                        ⚠️ 오더 수락 후에는 관리자 확정을 기다려주세요.
+                      </p>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
 
-              {/* 정산 가이드 */}
-              <AccordionItem value="settlements">
-                <AccordionTrigger className="text-left">
-                  💰 정산 관리 방법
-                </AccordionTrigger>
-                <AccordionContent className="space-y-3 text-sm">
-                  <p>완료된 오더에 대해 정산을 진행합니다.</p>
-                  <div>
-                    <p className="font-semibold">STAFF - 정산 관리:</p>
-                    <p>• 완료된 오더 목록 확인</p>
-                    <p>• 정산 금액 확인 후 정산 처리</p>
-                    <p>• 정산 완료 시 업체에 알림</p>
-                  </div>
-                  <div>
-                    <p className="font-semibold">PARTNER - 정산 현황:</p>
-                    <p>• 본인의 정산 내역 확인</p>
-                    <p>• 월별 정산 금액 조회</p>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
+              {/* 파트너용 오더 관리 가이드 */}
+              {isPartner && (
+                <AccordionItem value="order-manage">
+                  <AccordionTrigger className="text-left">
+                    📋 오더 관리 및 완료 처리
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 text-sm">
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">오더 상태 흐름</h4>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="outline" className="bg-yellow-100">요청됨</Badge>
+                        <span>→</span>
+                        <Badge variant="outline" className="bg-blue-100">수락됨</Badge>
+                        <span>→</span>
+                        <Badge variant="outline" className="bg-purple-100">확정됨</Badge>
+                        <span>→</span>
+                        <Badge variant="outline" className="bg-green-100">완료됨</Badge>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">완료 처리 방법</h4>
+                      <ol className="list-decimal list-inside space-y-2">
+                        <li>"오더 관리" 메뉴에서 <strong>확정됨</strong> 상태의 오더 확인</li>
+                        <li><strong>"완료 처리하기"</strong> 버튼 클릭</li>
+                        <li><strong>완료일자</strong> 입력 (필수)</li>
+                        <li><strong>파일 첨부</strong> - 서비스 완료 사진 등록 (필수, 1개 이상)</li>
+                        <li>현장 이슈 메모 입력 (선택)</li>
+                        <li><strong>"완료 처리"</strong> 버튼 클릭</li>
+                      </ol>
+                    </div>
+                    <div className="bg-destructive/10 p-3 rounded-lg">
+                      <p className="text-sm text-destructive">
+                        ⚠️ 완료일자와 첨부파일은 필수입니다. 파일 없이는 완료 처리가 불가능합니다.
+                      </p>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
 
-              {/* 전자서명 가이드 */}
-              <AccordionItem value="contracts">
-                <AccordionTrigger className="text-left">
-                  ✍️ 전자서명 계약서 생성
-                </AccordionTrigger>
-                <AccordionContent className="space-y-3 text-sm">
-                  <p>고객에게 전자서명 계약서를 발송할 수 있습니다.</p>
-                  <ol className="list-decimal list-inside space-y-1">
-                    <li>전자서명관리 → 템플릿 관리에서 계약서 템플릿 생성</li>
-                    <li>계약서 목록에서 "새 계약서 작성" 클릭</li>
-                    <li>템플릿 선택 후 예약 정보 입력</li>
-                    <li>생성된 링크를 고객에게 전달</li>
-                    <li>고객이 서명 완료 시 계약서 확인 가능</li>
-                  </ol>
-                </AccordionContent>
-              </AccordionItem>
+              {/* 파트너용 정산 현황 가이드 */}
+              {isPartner && (
+                <AccordionItem value="partner-settlements">
+                  <AccordionTrigger className="text-left">
+                    💰 정산 현황 확인
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 text-sm">
+                    <p>완료된 오더에 대한 정산 내역을 확인할 수 있습니다.</p>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">정산 확인 방법</h4>
+                      <ol className="list-decimal list-inside space-y-1">
+                        <li>좌측 메뉴에서 "정산 현황" 클릭</li>
+                        <li>정산 예정 / 정산 완료 내역 확인</li>
+                        <li>월별 정산 금액 조회 가능</li>
+                      </ol>
+                    </div>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <p className="text-sm">
+                        💡 정산은 관리자가 처리하며, 완료 시 알림을 받게 됩니다.
+                      </p>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
 
-              {/* 일정 관리 가이드 */}
+              {/* 파트너용 파트너 메모 가이드 */}
+              {isPartner && (
+                <AccordionItem value="partner-memo">
+                  <AccordionTrigger className="text-left">
+                    📝 파트너 메모 기능
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 text-sm">
+                    <p>각 오더별로 메모를 남길 수 있습니다.</p>
+                    <ol className="list-decimal list-inside space-y-1">
+                      <li>오더 관리에서 해당 오더의 "파트너 메모" 버튼 클릭</li>
+                      <li>메모 내용 입력 후 저장</li>
+                      <li>저장된 메모는 본인만 확인 가능</li>
+                    </ol>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <p className="text-sm">
+                        💡 고객 특이사항, 현장 메모 등을 기록해두세요.
+                      </p>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              {/* STAFF용 슬랙 연동 가이드 */}
+              {!isPartner && (
+                <AccordionItem value="slack">
+                  <AccordionTrigger className="text-left">
+                    🔗 슬랙(Slack) 연동 설정 방법
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-4 text-sm">
+                    <div className="bg-muted p-4 rounded-lg">
+                      <p className="font-semibold text-destructive mb-2">⚠️ 중요</p>
+                      <p>제휴업체와 메시지 소통을 위해서는 슬랙 연동이 필수입니다.</p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h4 className="font-semibold">1. Slack App 생성</h4>
+                      <ol className="list-decimal list-inside space-y-2 ml-2">
+                        <li>
+                          <a 
+                            href="https://api.slack.com/apps" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-primary underline"
+                          >
+                            Slack API 페이지
+                          </a>
+                          에 접속합니다.
+                        </li>
+                        <li>"Create New App" 클릭 → "From scratch" 선택</li>
+                        <li>App 이름 입력 (예: 모드라운지봇) 후 워크스페이스 선택</li>
+                      </ol>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h4 className="font-semibold">2. Bot Token Scopes 설정</h4>
+                      <ol className="list-decimal list-inside space-y-2 ml-2">
+                        <li>좌측 메뉴에서 "OAuth & Permissions" 클릭</li>
+                        <li>"Scopes" 섹션에서 "Bot Token Scopes" 찾기</li>
+                        <li>
+                          아래 권한들을 추가:
+                          <ul className="list-disc list-inside ml-4 mt-1 text-muted-foreground">
+                            <li>chat:write - 메시지 전송</li>
+                            <li>channels:read - 채널 정보 읽기</li>
+                            <li>users:read - 사용자 정보 읽기</li>
+                            <li>users:read.email - 사용자 이메일 읽기</li>
+                          </ul>
+                        </li>
+                      </ol>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h4 className="font-semibold">3. Event Subscriptions 설정 (메시지 수신용)</h4>
+                      <ol className="list-decimal list-inside space-y-2 ml-2">
+                        <li>좌측 메뉴에서 "Event Subscriptions" 클릭</li>
+                        <li>"Enable Events" 토글 ON</li>
+                        <li>
+                          Request URL에 Edge Function URL 입력:
+                          <code className="block bg-muted px-2 py-1 rounded mt-1 text-xs break-all">
+                            https://hunwnggzidopjhovvika.supabase.co/functions/v1/slack-events
+                          </code>
+                        </li>
+                        <li>
+                          "Subscribe to bot events"에서 추가:
+                          <ul className="list-disc list-inside ml-4 mt-1 text-muted-foreground">
+                            <li>message.channels - 채널 메시지 수신</li>
+                          </ul>
+                        </li>
+                      </ol>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h4 className="font-semibold">4. App 설치 및 토큰 발급</h4>
+                      <ol className="list-decimal list-inside space-y-2 ml-2">
+                        <li>"OAuth & Permissions"로 이동</li>
+                        <li>"Install to Workspace" 클릭 후 허용</li>
+                        <li>"Bot User OAuth Token" 복사 (xoxb-로 시작)</li>
+                        <li>이 토큰을 시스템 설정에 저장</li>
+                      </ol>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h4 className="font-semibold">5. 제휴업체별 채널 생성 및 연결</h4>
+                      <ol className="list-decimal list-inside space-y-2 ml-2">
+                        <li>Slack에서 제휴업체별 채널 생성 (예: #partner-업체명)</li>
+                        <li>생성한 채널에 봇 앱 초대 (/invite @봇이름)</li>
+                        <li>
+                          채널 ID 확인 방법:
+                          <ul className="list-disc list-inside ml-4 mt-1 text-muted-foreground">
+                            <li>채널명 우클릭 → "채널 세부정보 보기"</li>
+                            <li>하단에 채널 ID 표시 (C로 시작하는 영문숫자)</li>
+                          </ul>
+                        </li>
+                        <li>
+                          <span className="font-medium">사용자 관리</span>에서 해당 제휴업체의 
+                          <span className="font-medium text-primary"> Slack 채널 ID</span> 입력
+                        </li>
+                      </ol>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h4 className="font-semibold">6. 내부직원 Slack User ID 설정</h4>
+                      <ol className="list-decimal list-inside space-y-2 ml-2">
+                        <li>
+                          Slack User ID 확인 방법:
+                          <ul className="list-disc list-inside ml-4 mt-1 text-muted-foreground">
+                            <li>Slack에서 본인 프로필 클릭</li>
+                            <li>"프로필 보기" 클릭</li>
+                            <li>더보기(⋯) → "멤버 ID 복사"</li>
+                          </ul>
+                        </li>
+                        <li>
+                          <span className="font-medium">사용자 관리</span>에서 내부직원의 
+                          <span className="font-medium text-primary"> Slack User ID</span> 입력
+                        </li>
+                      </ol>
+                    </div>
+
+                    <div className="bg-primary/10 p-4 rounded-lg">
+                      <p className="font-semibold mb-2">✅ 연동 완료 후</p>
+                      <p>• ADMIN에서 메시지 전송 시 → 해당 업체 Slack 채널로 전달</p>
+                      <p>• Slack 채널에서 답장 시 → ADMIN C/S 화면에 표시</p>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              {/* STAFF용 오더 관리 가이드 */}
+              {!isPartner && (
+                <AccordionItem value="orders">
+                  <AccordionTrigger className="text-left">
+                    📋 오더 관리 프로세스
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 text-sm">
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">오더 상태 흐름</h4>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="outline">요청됨</Badge>
+                        <span>→</span>
+                        <Badge variant="outline">수락됨</Badge>
+                        <span>→</span>
+                        <Badge variant="outline">확정됨</Badge>
+                        <span>→</span>
+                        <Badge variant="outline">완료됨</Badge>
+                        <span>→</span>
+                        <Badge variant="outline">정산완료</Badge>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="font-semibold">STAFF:</p>
+                      <p>오더 요청 → 제휴업체 선택 → 서비스 정보 입력 → 요청</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold">PARTNER:</p>
+                      <p>오더 수락에서 확인 → 수락/거절 → 오더 관리에서 진행상황 업데이트</p>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              {/* STAFF용 정산 가이드 */}
+              {!isPartner && (
+                <AccordionItem value="settlements">
+                  <AccordionTrigger className="text-left">
+                    💰 정산 관리 방법
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 text-sm">
+                    <p>완료된 오더에 대해 정산을 진행합니다.</p>
+                    <div>
+                      <p className="font-semibold">STAFF - 정산 관리:</p>
+                      <p>• 완료된 오더 목록 확인</p>
+                      <p>• 정산 금액 확인 후 정산 처리</p>
+                      <p>• 정산 완료 시 업체에 알림</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold">PARTNER - 정산 현황:</p>
+                      <p>• 본인의 정산 내역 확인</p>
+                      <p>• 월별 정산 금액 조회</p>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              {/* STAFF용 전자서명 가이드 */}
+              {!isPartner && (
+                <AccordionItem value="contracts">
+                  <AccordionTrigger className="text-left">
+                    ✍️ 전자서명 계약서 생성
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 text-sm">
+                    <p>고객에게 전자서명 계약서를 발송할 수 있습니다.</p>
+                    <ol className="list-decimal list-inside space-y-1">
+                      <li>전자서명관리 → 템플릿 관리에서 계약서 템플릿 생성</li>
+                      <li>계약서 목록에서 "새 계약서 작성" 클릭</li>
+                      <li>템플릿 선택 후 예약 정보 입력</li>
+                      <li>생성된 링크를 고객에게 전달</li>
+                      <li>고객이 서명 완료 시 계약서 확인 가능</li>
+                    </ol>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              {/* 공통 - 일정 관리 가이드 */}
               <AccordionItem value="calendar">
                 <AccordionTrigger className="text-left">
                   📅 일정 보기 사용법
@@ -265,6 +432,39 @@ const Guide = () => {
                   <p>• 날짜 클릭 시 해당 날짜의 일정 목록 표시</p>
                   <p>• 오더와 연동된 일정 자동 표시</p>
                   <p>• 색상으로 일정 유형 구분</p>
+                  {isPartner && (
+                    <div className="bg-muted p-3 rounded-lg">
+                      <p className="text-sm">
+                        💡 오더 수락 시 자동으로 캘린더에 일정이 등록됩니다.
+                      </p>
+                    </div>
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+
+              {/* 공통 - C/S 메시지 가이드 */}
+              <AccordionItem value="messages">
+                <AccordionTrigger className="text-left">
+                  💬 C/S 메시지 사용법
+                </AccordionTrigger>
+                <AccordionContent className="space-y-3 text-sm">
+                  <p>
+                    {isPartner 
+                      ? "내부직원과 메시지로 소통할 수 있습니다."
+                      : "제휴업체와 메시지로 소통할 수 있습니다."}
+                  </p>
+                  <ol className="list-decimal list-inside space-y-1">
+                    <li>좌측 메뉴에서 "C/S" 클릭</li>
+                    <li>메시지 입력 후 전송</li>
+                    <li>읽지 않은 메시지는 알림으로 표시됩니다</li>
+                  </ol>
+                  {isPartner && (
+                    <div className="bg-muted p-3 rounded-lg">
+                      <p className="text-sm">
+                        💡 오더 관련 문의는 "오더 문의하기" 버튼을 이용하면 더 빠르게 처리됩니다.
+                      </p>
+                    </div>
+                  )}
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
