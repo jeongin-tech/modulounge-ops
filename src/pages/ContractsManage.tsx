@@ -6,7 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Copy, CheckCircle, Clock, Search, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Plus, Copy, CheckCircle, Clock, Search, ChevronLeft, ChevronRight, Trash2, User } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +39,13 @@ interface Contract {
   submitted_at: string | null;
   access_token: string;
   created_at: string;
+  created_by: string;
+  creator_name?: string;
+}
+
+interface StaffMember {
+  id: string;
+  full_name: string;
 }
 
 const ITEMS_PER_PAGE = 5;
@@ -39,13 +53,16 @@ const ITEMS_PER_PAGE = 5;
 const ContractsManage = () => {
   const navigate = useNavigate();
   const [contracts, setContracts] = useState<Contract[]>([]);
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchName, setSearchName] = useState("");
   const [searchDate, setSearchDate] = useState("");
+  const [selectedStaff, setSelectedStaff] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     fetchContracts();
+    fetchStaffMembers();
   }, []);
 
   // 필터링된 계약서 목록
@@ -55,9 +72,11 @@ const ContractsManage = () => {
         (contract.customer_name?.toLowerCase().includes(searchName.toLowerCase()));
       const matchesDate = !searchDate || 
         contract.reservation_date === searchDate;
-      return matchesName && matchesDate;
+      const matchesStaff = selectedStaff === "all" || 
+        contract.created_by === selectedStaff;
+      return matchesName && matchesDate && matchesStaff;
     });
-  }, [contracts, searchName, searchDate]);
+  }, [contracts, searchName, searchDate, selectedStaff]);
 
   // 페이지네이션 계산
   const totalPages = Math.ceil(filteredContracts.length / ITEMS_PER_PAGE);
@@ -69,17 +88,42 @@ const ContractsManage = () => {
   // 검색 조건 변경 시 첫 페이지로 이동
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchName, searchDate]);
+  }, [searchName, searchDate, selectedStaff]);
+
+  const fetchStaffMembers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .eq("role", "STAFF");
+
+      if (error) throw error;
+      setStaffMembers(data || []);
+    } catch (error) {
+      console.error("직원 목록 조회 오류:", error);
+    }
+  };
 
   const fetchContracts = async () => {
     try {
       const { data, error } = await supabase
         .from("contracts")
-        .select("*")
+        .select(`
+          *,
+          profiles:created_by (
+            full_name
+          )
+        `)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setContracts(data || []);
+      
+      const contractsWithCreator = (data || []).map((contract: any) => ({
+        ...contract,
+        creator_name: contract.profiles?.full_name || "알 수 없음"
+      }));
+      
+      setContracts(contractsWithCreator);
     } catch (error) {
       console.error("계약서 조회 오류:", error);
       toast.error("계약서를 불러오는데 실패했습니다.");
@@ -151,6 +195,21 @@ const ContractsManage = () => {
               className="w-full"
             />
           </div>
+          <div className="w-full sm:w-48">
+            <Select value={selectedStaff} onValueChange={setSelectedStaff}>
+              <SelectTrigger>
+                <SelectValue placeholder="담당자 선택" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체 담당자</SelectItem>
+                {staffMembers.map((staff) => (
+                  <SelectItem key={staff.id} value={staff.id}>
+                    {staff.full_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {loading ? (
@@ -211,6 +270,13 @@ const ContractsManage = () => {
                       <p className="text-sm text-muted-foreground">생성일</p>
                       <p className="font-medium">
                         {format(new Date(contract.created_at), "yyyy-MM-dd HH:mm")}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">담당자</p>
+                      <p className="font-medium flex items-center gap-1">
+                        <User className="h-3 w-3" />
+                        {contract.creator_name}
                       </p>
                     </div>
                     {contract.submitted_at && (
