@@ -26,10 +26,19 @@ interface Order {
   amount: number;
   status: string;
   partner_id: string;
+  staff_id: string;
   partner_profile: {
     company_name: string;
     full_name: string;
   };
+  staff_profile: {
+    full_name: string;
+  } | null;
+}
+
+interface StaffMember {
+  id: string;
+  full_name: string;
 }
 
 const ITEMS_PER_PAGE = 20;
@@ -38,16 +47,27 @@ const OrdersAll = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [staffFilter, setStaffFilter] = useState("all");
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     fetchOrders();
-  }, [statusFilter]);
+    fetchStaffMembers();
+  }, [statusFilter, staffFilter]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, statusFilter]);
+  }, [searchQuery, statusFilter, staffFilter]);
+
+  const fetchStaffMembers = async () => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .eq("role", "STAFF");
+    if (data) setStaffMembers(data);
+  };
 
   const filteredOrders = useMemo(() => {
     if (!searchQuery.trim()) return orders;
@@ -76,12 +96,19 @@ const OrdersAll = () => {
           partner_profile:profiles!partner_id (
             company_name,
             full_name
+          ),
+          staff_profile:profiles!staff_id (
+            full_name
           )
         `)
         .order("created_at", { ascending: false });
 
       if (statusFilter !== "all") {
         query = query.eq("status", statusFilter as any);
+      }
+
+      if (staffFilter !== "all") {
+        query = query.eq("staff_id", staffFilter);
       }
 
       const { data, error } = await query;
@@ -197,6 +224,19 @@ const OrdersAll = () => {
                 className="pl-9 w-full sm:w-[200px]"
               />
             </div>
+            <Select value={staffFilter} onValueChange={setStaffFilter}>
+              <SelectTrigger className="w-full sm:w-[140px]">
+                <SelectValue placeholder="담당 직원" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체 직원</SelectItem>
+                {staffMembers.map((staff) => (
+                  <SelectItem key={staff.id} value={staff.id}>
+                    {staff.full_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full sm:w-[140px]">
                 <SelectValue placeholder="상태 필터" />
@@ -288,7 +328,7 @@ const OrdersAll = () => {
                     <OrderStatusStepper status={order.status} />
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <div className="flex items-center gap-2 text-sm">
                       <Building2 className="h-4 w-4 text-muted-foreground" />
                       <div>
@@ -317,6 +357,13 @@ const OrdersAll = () => {
                         <p className="font-semibold text-primary">
                           ₩{order.amount?.toLocaleString()}
                         </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <User className="h-4 w-4 text-primary" />
+                      <div>
+                        <p className="font-medium text-xs text-muted-foreground">담당 직원</p>
+                        <p className="text-primary font-medium">{order.staff_profile?.full_name || "-"}</p>
                       </div>
                     </div>
                   </div>
