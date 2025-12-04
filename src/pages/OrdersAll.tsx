@@ -84,12 +84,26 @@ const OrdersAll = () => {
 
   const handleCancelOrder = async (orderId: string) => {
     try {
+      // Get order details first
+      const order = orders.find((o) => o.id === orderId);
+      if (!order) throw new Error("오더를 찾을 수 없습니다.");
+
       const { error } = await supabase
         .from("orders")
         .update({ status: "cancelled" })
         .eq("id", orderId);
 
       if (error) throw error;
+
+      // Create notification for partner
+      await supabase.from("notifications").insert({
+        user_id: order.partner_id,
+        title: "오더가 철회되었습니다",
+        message: `오더번호 ${order.order_number} (${order.customer_name})가 관리자에 의해 철회되었습니다.`,
+        type: "warning",
+        related_order_id: orderId,
+      });
+
       toast.success("오더가 취소되었습니다.");
       fetchOrders();
     } catch (error: any) {
@@ -99,12 +113,26 @@ const OrdersAll = () => {
 
   const handleConfirmOrder = async (orderId: string) => {
     try {
+      // Get order details first
+      const order = orders.find((o) => o.id === orderId);
+      if (!order) throw new Error("오더를 찾을 수 없습니다.");
+
       const { error } = await supabase
         .from("orders")
         .update({ status: "confirmed" })
         .eq("id", orderId);
 
       if (error) throw error;
+
+      // Create notification for partner
+      await supabase.from("notifications").insert({
+        user_id: order.partner_id,
+        title: "오더가 확정되었습니다",
+        message: `오더번호 ${order.order_number} (${order.customer_name})가 확정되었습니다. 완료 처리가 가능합니다.`,
+        type: "success",
+        related_order_id: orderId,
+      });
+
       toast.success("오더가 확정되었습니다!");
       fetchOrders();
     } catch (error: any) {

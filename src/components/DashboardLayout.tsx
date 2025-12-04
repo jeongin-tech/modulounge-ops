@@ -24,6 +24,7 @@ import {
   User as UserIcon,
 } from "lucide-react";
 import ChannelTalk from "@/components/ChannelTalk";
+import NotificationBell from "@/components/NotificationBell";
 import logo from "@/assets/logo.jpg";
 import { toast } from "sonner";
 
@@ -266,13 +267,16 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
           <img src={logo} alt="모드라운지" className="h-8 w-8 rounded-full" />
           <span className="font-bold">모드라운지 ADMIN</span>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-        >
-          {sidebarOpen ? <X /> : <Menu />}
-        </Button>
+        <div className="flex items-center gap-2">
+          <NotificationBell />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            {sidebarOpen ? <X /> : <Menu />}
+          </Button>
+        </div>
       </div>
 
       {/* Sidebar */}
@@ -284,11 +288,16 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
       >
         <div className="flex flex-col h-full">
           <div className="p-6 border-b">
-            <div className="flex items-center gap-3">
-              <img src={logo} alt="모드라운지" className="h-12 w-12 rounded-full" />
-              <div>
-                <h1 className="font-bold text-lg">모드라운지</h1>
-                <p className="text-xs text-muted-foreground">ADMIN</p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <img src={logo} alt="모드라운지" className="h-12 w-12 rounded-full" />
+                <div>
+                  <h1 className="font-bold text-lg">모드라운지</h1>
+                  <p className="text-xs text-muted-foreground">ADMIN</p>
+                </div>
+              </div>
+              <div className="hidden lg:block">
+                <NotificationBell />
               </div>
             </div>
           </div>
