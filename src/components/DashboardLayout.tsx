@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -35,6 +36,7 @@ interface MenuItem {
   label: string;
   path: string;
   roles: ("STAFF" | "PARTNER")[];
+  badgeCount?: number;
 }
 
 const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
@@ -51,6 +53,7 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
     service_regions?: string[];
   } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -95,6 +98,43 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
       fetchUserProfile();
     }
   }, [user]);
+
+  // 대기중인 오더 수 가져오기
+  useEffect(() => {
+    if (user && userRole === "PARTNER") {
+      const fetchPendingOrders = async () => {
+        const { count } = await supabase
+          .from("orders")
+          .select("*", { count: "exact", head: true })
+          .eq("partner_id", user.id)
+          .eq("status", "requested");
+        
+        setPendingOrdersCount(count || 0);
+      };
+      fetchPendingOrders();
+
+      // 실시간 구독
+      const channel = supabase
+        .channel("orders-changes")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "orders",
+            filter: `partner_id=eq.${user.id}`,
+          },
+          () => {
+            fetchPendingOrders();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [user, userRole]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -247,20 +287,31 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
           </div>
 
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-            {filteredMenuItems.map((item) => (
-              <Button
-                key={item.path}
-                variant={currentPage === item.path ? "default" : "ghost"}
-                className="w-full justify-start"
-                onClick={() => {
-                  navigate(item.path);
-                  setSidebarOpen(false);
-                }}
-              >
-                {item.icon}
-                <span className="ml-3">{item.label}</span>
-              </Button>
-            ))}
+            {filteredMenuItems.map((item) => {
+              const badgeCount = item.path === "/orders/accept" ? pendingOrdersCount : 0;
+              return (
+                <Button
+                  key={item.path}
+                  variant={currentPage === item.path ? "default" : "ghost"}
+                  className="w-full justify-start relative"
+                  onClick={() => {
+                    navigate(item.path);
+                    setSidebarOpen(false);
+                  }}
+                >
+                  {item.icon}
+                  <span className="ml-3">{item.label}</span>
+                  {badgeCount > 0 && (
+                    <Badge 
+                      variant="destructive" 
+                      className="ml-auto h-5 w-5 p-0 flex items-center justify-center text-xs"
+                    >
+                      {badgeCount > 9 ? "9+" : badgeCount}
+                    </Badge>
+                  )}
+                </Button>
+              );
+            })}
           </nav>
 
           <div className="p-4 border-t space-y-2">

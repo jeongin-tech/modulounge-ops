@@ -218,12 +218,24 @@ const CalendarView = () => {
                   
                   return (
                     <div 
-                      className={`h-full w-full p-2 rounded-md hover:bg-accent cursor-pointer flex flex-col items-start justify-start ${
+                      className={`h-full w-full p-2 rounded-md hover:bg-accent cursor-pointer flex flex-col items-start justify-start relative ${
                         isSelected ? 'bg-primary text-primary-foreground hover:bg-primary/90' : ''
                       }`}
                       onClick={() => handleDateClick(date)}
                     >
-                      <span className="text-sm mb-1">{date.getDate()}</span>
+                      <div className="flex items-center gap-1 mb-1">
+                        <span className="text-sm">{date.getDate()}</span>
+                        {dayEvents.length > 0 && (
+                          <Badge 
+                            variant="secondary" 
+                            className={`h-4 min-w-4 px-1 text-[10px] font-bold ${
+                              isSelected ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-primary/10 text-primary'
+                            }`}
+                          >
+                            {dayEvents.length}
+                          </Badge>
+                        )}
+                      </div>
                       {dayEvents.length > 0 && (
                         <div className="flex flex-col gap-1 w-full">
                           {dayEvents.slice(0, 2).map((event) => (
