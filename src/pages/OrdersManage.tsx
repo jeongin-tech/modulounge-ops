@@ -255,6 +255,31 @@ const OrdersManage = () => {
           <p className="text-muted-foreground mt-2">수락한 오더를 관리하고 완료 처리하세요</p>
         </div>
 
+        {/* Status Guide */}
+        <Card className="bg-muted/50">
+          <CardContent className="py-4">
+            <p className="text-sm font-medium mb-3">진행상태 안내</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                <span><strong>요청</strong> - 오더가 접수됨</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-blue-500" />
+                <span><strong>수락됨</strong> - 오더를 수락함</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-primary" />
+                <span><strong>확정됨</strong> - 관리자가 확정</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-green-500" />
+                <span><strong>완료</strong> - 서비스 완료</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {orders.length === 0 ? (
           <Card>
             <CardContent className="text-center py-12">
