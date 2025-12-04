@@ -47,16 +47,23 @@ const CalendarView = () => {
   }, []);
 
   const fetchEventTypes = async () => {
-    const { data } = await supabase
+    // profiles에서 service_type 가져오기
+    const { data: profileData } = await supabase
       .from("profiles")
       .select("service_type")
       .not("service_type", "is", null);
     
-    if (data) {
-      const types = ["공간대관", ...new Set(data.map(p => p.service_type).filter(Boolean))];
-      setEventTypes(types as string[]);
-      setSelectedEventTypes(new Set(types as string[]));
-    }
+    // calendar_events에서 실제 event_type 가져오기
+    const { data: eventData } = await supabase
+      .from("calendar_events")
+      .select("event_type");
+    
+    const profileTypes = profileData?.map(p => p.service_type).filter(Boolean) || [];
+    const eventTypes = eventData?.map(e => e.event_type).filter(Boolean) || [];
+    
+    const allTypes = ["공간대관", ...new Set([...profileTypes, ...eventTypes])];
+    setEventTypes(allTypes as string[]);
+    setSelectedEventTypes(new Set(allTypes as string[]));
   };
 
   const fetchEvents = async () => {
