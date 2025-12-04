@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Calendar, MapPin, User } from "lucide-react";
+import { syncOrderToChannelTalk } from "@/lib/channelTalk";
 
 interface Order {
   id: string;
@@ -56,6 +57,10 @@ const OrdersAccept = () => {
         .eq("id", orderId);
 
       if (error) throw error;
+      
+      // 채널톡에 주문 상태 동기화
+      syncOrderToChannelTalk(orderId, 'status_changed');
+      
       toast.success("오더를 수락했습니다!");
       fetchOrders();
     } catch (error: any) {
@@ -71,12 +76,17 @@ const OrdersAccept = () => {
         .eq("id", orderId);
 
       if (error) throw error;
+      
+      // 채널톡에 주문 상태 동기화
+      syncOrderToChannelTalk(orderId, 'status_changed');
+      
       toast.success("오더를 거절했습니다.");
       fetchOrders();
     } catch (error: any) {
       toast.error("오더 거절에 실패했습니다.");
     }
   };
+
 
   if (loading) {
     return (

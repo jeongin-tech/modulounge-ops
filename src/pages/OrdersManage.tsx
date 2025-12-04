@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Calendar, MapPin, User, Upload, FileText } from "lucide-react";
+import { syncOrderToChannelTalk } from "@/lib/channelTalk";
 
 interface Order {
   id: string;
@@ -72,6 +73,10 @@ const OrdersManage = () => {
         .eq("id", orderId);
 
       if (error) throw error;
+      
+      // 채널톡에 주문 상태 동기화
+      syncOrderToChannelTalk(orderId, 'status_changed');
+      
       toast.success("오더가 완료 처리되었습니다!");
       setSelectedOrder(null);
       setMemo("");
