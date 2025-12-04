@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Calendar, MapPin, User, Building2, Search } from "lucide-react";
+import { Calendar, MapPin, User, Building2, Search, Trash2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -14,6 +14,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import OrderStatusStepper from "@/components/OrderStatusStepper";
 
 interface Order {
@@ -51,6 +62,8 @@ const OrdersAll = () => {
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -219,6 +232,58 @@ const OrdersAll = () => {
     return <Badge className={statusInfo.className}>{statusInfo.label}</Badge>;
   };
 
+  const handleSelectOrder = (orderId: string, checked: boolean) => {
+    const newSelected = new Set(selectedOrders);
+    if (checked) {
+      newSelected.add(orderId);
+    } else {
+      newSelected.delete(orderId);
+    }
+    setSelectedOrders(newSelected);
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = paginatedOrders.map((o) => o.id);
+      setSelectedOrders(new Set(allIds));
+    } else {
+      setSelectedOrders(new Set());
+    }
+  };
+
+  const handleBulkCancel = async () => {
+    try {
+      const selectedArray = Array.from(selectedOrders);
+      
+      for (const orderId of selectedArray) {
+        const order = orders.find((o) => o.id === orderId);
+        if (!order) continue;
+
+        await supabase
+          .from("orders")
+          .update({ status: "cancelled" })
+          .eq("id", orderId);
+
+        await supabase.from("notifications").insert({
+          user_id: order.partner_id,
+          title: "오더가 철회되었습니다",
+          message: `오더번호 ${order.order_number} (${order.customer_name})가 관리자에 의해 철회되었습니다.`,
+          type: "warning",
+          related_order_id: orderId,
+        });
+      }
+
+      toast.success(`${selectedArray.length}건의 오더가 취소되었습니다.`);
+      setSelectedOrders(new Set());
+      setShowDeleteDialog(false);
+      fetchOrders();
+    } catch (error) {
+      toast.error("오더 취소에 실패했습니다.");
+    }
+  };
+
+  const isAllSelected = paginatedOrders.length > 0 && paginatedOrders.every((o) => selectedOrders.has(o.id));
+
   if (loading) {
     return (
       <DashboardLayout currentPage="/orders/all">
@@ -322,29 +387,60 @@ const OrdersAll = () => {
           </Card>
         ) : (
           <>
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>총 {filteredOrders.length}건</span>
-              <span>{currentPage} / {totalPages} 페이지</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={isAllSelected}
+                    onCheckedChange={handleSelectAll}
+                    id="select-all"
+                  />
+                  <label htmlFor="select-all" className="text-sm text-muted-foreground cursor-pointer">
+                    전체 선택
+                  </label>
+                </div>
+                {selectedOrders.size > 0 && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setShowDeleteDialog(true)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    선택 취소 ({selectedOrders.size})
+                  </Button>
+                )}
+              </div>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <span>총 {filteredOrders.length}건</span>
+                <span>{currentPage} / {totalPages} 페이지</span>
+              </div>
             </div>
             <div className="grid gap-4">
               {paginatedOrders.map((order) => (
-              <Card key={order.id} className="hover:shadow-lg transition-shadow">
+              <Card key={order.id} className={`hover:shadow-lg transition-shadow ${selectedOrders.has(order.id) ? "ring-2 ring-primary" : ""}`}>
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-bold">{order.order_number}</h3>
-                        <Badge variant="secondary">{order.service_type}</Badge>
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        checked={selectedOrders.has(order.id)}
+                        onCheckedChange={(checked) => handleSelectOrder(order.id, checked as boolean)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-lg font-bold">{order.order_number}</h3>
+                          <Badge variant="secondary">{order.service_type}</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {new Date(order.service_date).toLocaleDateString("ko-KR", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {new Date(order.service_date).toLocaleDateString("ko-KR", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
                     </div>
                   </div>
 
@@ -477,6 +573,23 @@ const OrdersAll = () => {
             )}
           </>
         )}
+
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>선택한 오더를 취소하시겠습니까?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {selectedOrders.size}건의 오더가 취소됩니다. 취소된 오더는 파트너에게 알림이 전송됩니다.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>취소</AlertDialogCancel>
+              <AlertDialogAction onClick={handleBulkCancel} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                확인
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DashboardLayout>
   );
