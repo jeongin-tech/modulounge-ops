@@ -40,6 +40,7 @@ const eventTypeColors: Record<string, string> = {
   "영상촬영": "#06b6d4", // cyan
   "청소": "#6366f1",     // indigo
   "인테리어": "#ec4899", // pink
+  "사전답사": "#22c55e", // green
   "기타": "#64748b",     // slate
 };
 
