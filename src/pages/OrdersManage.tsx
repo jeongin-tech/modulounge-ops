@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,6 +57,7 @@ const OrdersManage = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchOrders();
@@ -202,7 +203,10 @@ const OrdersManage = () => {
       toast.error("파일 업로드에 실패했습니다.");
     } finally {
       setUploading(false);
-      e.target.value = "";
+      // Use ref to safely reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -461,6 +465,7 @@ const OrdersManage = () => {
                             <div className="flex items-center gap-2">
                               <label className="flex-1">
                                 <input
+                                  ref={fileInputRef}
                                   type="file"
                                   className="hidden"
                                   onChange={(e) => handleFileUpload(e, order.id)}
