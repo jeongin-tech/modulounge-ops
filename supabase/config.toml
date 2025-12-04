@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.reset-password]
 verify_jwt = false
+
+[functions.channel-talk-app]
+verify_jwt = false
