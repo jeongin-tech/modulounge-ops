@@ -41,6 +41,15 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<"STAFF" | "PARTNER" | null>(null);
+  const [userProfile, setUserProfile] = useState<{
+    full_name?: string;
+    phone?: string;
+    company_name?: string;
+    business_registration_number?: string;
+    representative_name?: string;
+    service_type?: string;
+    service_regions?: string[];
+  } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -63,18 +72,27 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
 
   useEffect(() => {
     if (user) {
-      const fetchUserRole = async () => {
+      const fetchUserProfile = async () => {
         const { data } = await supabase
           .from("profiles")
-          .select("role")
+          .select("role, full_name, phone, company_name, business_registration_number, representative_name, service_type, service_regions")
           .eq("id", user.id)
           .single();
         
         if (data) {
           setUserRole(data.role as "STAFF" | "PARTNER");
+          setUserProfile({
+            full_name: data.full_name || undefined,
+            phone: data.phone || undefined,
+            company_name: data.company_name || undefined,
+            business_registration_number: data.business_registration_number || undefined,
+            representative_name: data.representative_name || undefined,
+            service_type: data.service_type || undefined,
+            service_regions: data.service_regions as string[] || undefined,
+          });
         }
       };
-      fetchUserRole();
+      fetchUserProfile();
     }
   }, [user]);
 
@@ -286,6 +304,13 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
           user={{
             id: user.id,
             email: user.email || "",
+            name: userProfile?.full_name,
+            mobileNumber: userProfile?.phone,
+            companyName: userProfile?.company_name,
+            businessRegistrationNumber: userProfile?.business_registration_number,
+            representativeName: userProfile?.representative_name,
+            serviceType: userProfile?.service_type,
+            serviceRegions: userProfile?.service_regions,
           }}
         />
       )}
