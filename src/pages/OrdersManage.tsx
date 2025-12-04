@@ -97,11 +97,15 @@ const OrdersManage = () => {
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, orderId: string) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("파일 크기는 10MB 이하여야 합니다.");
+    const filesArray = Array.from(fileList);
+    
+    // Validate all file sizes
+    const oversizedFiles = filesArray.filter(file => file.size > 10 * 1024 * 1024);
+    if (oversizedFiles.length > 0) {
+      toast.error(`${oversizedFiles.length}개 파일이 10MB를 초과합니다.`);
       return;
     }
 
@@ -111,30 +115,47 @@ const OrdersManage = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("로그인이 필요합니다.");
 
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${orderId}/${Date.now()}.${fileExt}`;
+      let successCount = 0;
+      let failCount = 0;
 
-      const { error: uploadError } = await supabase.storage
-        .from("order-files")
-        .upload(fileName, file);
+      for (const file of filesArray) {
+        try {
+          const fileExt = file.name.split(".").pop();
+          const fileName = `${orderId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-      if (uploadError) throw uploadError;
+          const { error: uploadError } = await supabase.storage
+            .from("order-files")
+            .upload(fileName, file);
 
-      const { data: { publicUrl } } = supabase.storage
-        .from("order-files")
-        .getPublicUrl(fileName);
+          if (uploadError) throw uploadError;
 
-      const { error: dbError } = await supabase.from("order_files").insert({
-        order_id: orderId,
-        file_name: file.name,
-        file_url: publicUrl,
-        file_type: file.type,
-        uploaded_by: user.id,
-      });
+          const { data: { publicUrl } } = supabase.storage
+            .from("order-files")
+            .getPublicUrl(fileName);
 
-      if (dbError) throw dbError;
+          const { error: dbError } = await supabase.from("order_files").insert({
+            order_id: orderId,
+            file_name: file.name,
+            file_url: publicUrl,
+            file_type: file.type,
+            uploaded_by: user.id,
+          });
 
-      toast.success("파일이 업로드되었습니다.");
+          if (dbError) throw dbError;
+          successCount++;
+        } catch (error) {
+          console.error("Upload error for file:", file.name, error);
+          failCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        toast.success(`${successCount}개 파일이 업로드되었습니다.`);
+      }
+      if (failCount > 0) {
+        toast.error(`${failCount}개 파일 업로드에 실패했습니다.`);
+      }
+      
       fetchFiles(orderId);
     } catch (error: any) {
       console.error("Upload error:", error);
@@ -345,6 +366,7 @@ const OrdersManage = () => {
                                   onChange={(e) => handleFileUpload(e, order.id)}
                                   accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
                                   disabled={uploading}
+                                  multiple
                                 />
                                 <Button
                                   variant="outline"
