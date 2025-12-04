@@ -21,6 +21,7 @@ import {
   BookOpen,
   Calculator,
   Tag,
+  User as UserIcon,
 } from "lucide-react";
 import ChannelTalk from "@/components/ChannelTalk";
 import logo from "@/assets/logo.jpg";
@@ -238,6 +239,12 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
       label: "사용가이드",
       path: "/guide",
       roles: ["STAFF", "PARTNER"],
+    },
+    {
+      icon: <UserIcon className="h-5 w-5" />,
+      label: "프로필 관리",
+      path: "/profile",
+      roles: ["PARTNER"],
     },
     {
       icon: <Settings className="h-5 w-5" />,
