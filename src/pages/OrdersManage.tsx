@@ -474,6 +474,7 @@ const OrdersManage = () => {
                                   multiple
                                 />
                                 <Button
+                                  type="button"
                                   variant="outline"
                                   className="w-full"
                                   disabled={uploading}
@@ -522,6 +523,7 @@ const OrdersManage = () => {
                                       <span className="truncate">{file.file_name}</span>
                                     </a>
                                     <Button
+                                      type="button"
                                       variant="ghost"
                                       size="icon"
                                       className="h-8 w-8 shrink-0"
@@ -547,12 +549,14 @@ const OrdersManage = () => {
                           </div>
                           <div className="flex gap-3">
                             <Button
+                              type="button"
                               onClick={() => handleComplete(order.id)}
                               className="flex-1 bg-gradient-primary"
                             >
                               완료 처리
                             </Button>
                             <Button
+                              type="button"
                               onClick={() => {
                                 setSelectedOrder(null);
                                 setMemo("");
