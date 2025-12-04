@@ -48,7 +48,9 @@ const OrdersAll = () => {
     return orders.filter(
       (order) =>
         order.order_number.toLowerCase().includes(query) ||
-        order.customer_name.toLowerCase().includes(query)
+        order.customer_name.toLowerCase().includes(query) ||
+        order.partner_profile?.company_name?.toLowerCase().includes(query) ||
+        order.partner_profile?.full_name?.toLowerCase().includes(query)
     );
   }, [orders, searchQuery]);
 
@@ -148,7 +150,7 @@ const OrdersAll = () => {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="오더번호, 고객명 검색"
+                placeholder="오더번호, 고객명, 업체명 검색"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 w-full sm:w-[200px]"
