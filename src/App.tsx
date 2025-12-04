@@ -14,7 +14,6 @@ import Settlements from "./pages/Settlements";
 import SettlementsManage from "./pages/SettlementsManage";
 import Partners from "./pages/Partners";
 import Users from "./pages/Users";
-import Messages from "./pages/Messages";
 import Settings from "./pages/Settings";
 import ContractsManage from "./pages/ContractsManage";
 import ContractCreate from "./pages/ContractCreate";
@@ -61,7 +60,6 @@ const App = () => (
           <Route path="/pricing" element={<PricingManage />} />
           <Route path="/guide" element={<Guide />} />
           <Route path="/test" element={<TestPage />} />
-          <Route path="/messages" element={<Messages />} />
           <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
