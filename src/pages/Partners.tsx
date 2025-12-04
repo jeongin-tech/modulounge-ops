@@ -4,7 +4,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Building2, DollarSign, ClipboardList } from "lucide-react";
+import { Building2, DollarSign, ClipboardList, Clock, CheckCircle, XCircle } from "lucide-react";
 
 interface PartnerStats {
   id: string;
@@ -13,9 +13,13 @@ interface PartnerStats {
   email: string;
   phone: string;
   totalOrders: number;
+  requestedOrders: number;
+  acceptedOrders: number;
+  rejectedOrders: number;
   completedOrders: number;
   totalRevenue: number;
   responseRate: number;
+  avgResponseTime: number | null; // in minutes
 }
 
 const Partners = () => {
@@ -37,18 +41,47 @@ const Partners = () => {
       if (partnersError) throw partnersError;
 
       const statsPromises = partnersData.map(async (partner) => {
-        // Get total orders
-        const { count: totalCount } = await supabase
+        // Get all orders for this partner
+        const { data: allOrders } = await supabase
           .from("orders")
-          .select("*", { count: "exact", head: true })
+          .select("id, status, created_at, updated_at")
           .eq("partner_id", partner.id);
 
-        // Get completed orders (including settled)
-        const { count: completedCount } = await supabase
-          .from("orders")
-          .select("*", { count: "exact", head: true })
-          .eq("partner_id", partner.id)
-          .in("status", ["completed", "settled"]);
+        const orders = allOrders || [];
+
+        // Count by status
+        const totalOrders = orders.length;
+        const requestedOrders = orders.filter(o => o.status === "requested").length;
+        const acceptedOrders = orders.filter(o => 
+          ["accepted", "confirmed", "completed", "settled"].includes(o.status)
+        ).length;
+        const rejectedOrders = orders.filter(o => o.status === "cancelled").length;
+        const completedOrders = orders.filter(o => 
+          ["completed", "settled"].includes(o.status)
+        ).length;
+
+        // Calculate average response time for accepted orders
+        const respondedOrders = orders.filter(o => 
+          ["accepted", "confirmed", "completed", "settled", "cancelled"].includes(o.status)
+        );
+        
+        let avgResponseTime: number | null = null;
+        if (respondedOrders.length > 0) {
+          const totalMinutes = respondedOrders.reduce((sum, order) => {
+            const created = new Date(order.created_at).getTime();
+            const updated = new Date(order.updated_at).getTime();
+            const diffMinutes = (updated - created) / (1000 * 60);
+            return sum + diffMinutes;
+          }, 0);
+          avgResponseTime = Math.round(totalMinutes / respondedOrders.length);
+        }
+
+        // Calculate response rate (responded / total excluding currently requested)
+        const respondedCount = acceptedOrders + rejectedOrders;
+        const totalExcludingPending = respondedCount + requestedOrders;
+        const responseRate = totalExcludingPending > 0 
+          ? Math.round((respondedCount / totalExcludingPending) * 100)
+          : 0;
 
         // Get total revenue from settlements
         const { data: settlements } = await supabase
@@ -62,30 +95,16 @@ const Partners = () => {
           0
         ) || 0;
 
-        // Calculate response rate
-        const { count: requestedCount } = await supabase
-          .from("orders")
-          .select("*", { count: "exact", head: true })
-          .eq("partner_id", partner.id)
-          .eq("status", "requested");
-
-        const { count: acceptedCount } = await supabase
-          .from("orders")
-          .select("*", { count: "exact", head: true })
-          .eq("partner_id", partner.id)
-          .in("status", ["accepted", "confirmed", "completed", "settled"]);
-
-        const responseRate =
-          totalCount && totalCount > 0
-            ? Math.round(((acceptedCount || 0) / totalCount) * 100)
-            : 0;
-
         return {
           ...partner,
-          totalOrders: totalCount || 0,
-          completedOrders: completedCount || 0,
+          totalOrders,
+          requestedOrders,
+          acceptedOrders,
+          rejectedOrders,
+          completedOrders,
           totalRevenue,
           responseRate,
+          avgResponseTime,
         };
       });
 
@@ -96,6 +115,17 @@ const Partners = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const formatResponseTime = (minutes: number | null) => {
+    if (minutes === null) return "-";
+    if (minutes < 60) return `${minutes}분`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours < 24) return mins > 0 ? `${hours}시간 ${mins}분` : `${hours}시간`;
+    const days = Math.floor(hours / 24);
+    const remainingHours = hours % 24;
+    return remainingHours > 0 ? `${days}일 ${remainingHours}시간` : `${days}일`;
   };
 
   if (loading) {
@@ -149,25 +179,50 @@ const Partners = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  {/* 응답 시간 */}
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">평균 응답시간</span>
+                    </div>
+                    <span className="font-semibold text-primary">
+                      {formatResponseTime(partner.avgResponseTime)}
+                    </span>
+                  </div>
+
+                  {/* 오더 현황 */}
+                  <div className="grid grid-cols-4 gap-2 text-center">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <ClipboardList className="h-4 w-4" />
-                        <span className="text-xs">총 오더</span>
+                      <div className="flex items-center justify-center">
+                        <ClipboardList className="h-4 w-4 text-muted-foreground" />
                       </div>
-                      <p className="text-2xl font-bold">{partner.totalOrders}</p>
+                      <p className="text-xs text-muted-foreground">총 요청</p>
+                      <p className="text-lg font-bold">{partner.totalOrders}</p>
                     </div>
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <ClipboardList className="h-4 w-4" />
-                        <span className="text-xs">완료</span>
+                      <div className="flex items-center justify-center">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
                       </div>
-                      <p className="text-2xl font-bold text-green-600">
-                        {partner.completedOrders}
-                      </p>
+                      <p className="text-xs text-muted-foreground">수락</p>
+                      <p className="text-lg font-bold text-green-600">{partner.acceptedOrders}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-center">
+                        <XCircle className="h-4 w-4 text-red-500" />
+                      </div>
+                      <p className="text-xs text-muted-foreground">거절</p>
+                      <p className="text-lg font-bold text-red-600">{partner.rejectedOrders}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-center">
+                        <CheckCircle className="h-4 w-4 text-blue-500" />
+                      </div>
+                      <p className="text-xs text-muted-foreground">완료</p>
+                      <p className="text-lg font-bold text-blue-600">{partner.completedOrders}</p>
                     </div>
                   </div>
 
+                  {/* 정산 금액 */}
                   <div className="pt-4 border-t">
                     <div className="flex items-center gap-2 text-muted-foreground mb-2">
                       <DollarSign className="h-4 w-4" />
