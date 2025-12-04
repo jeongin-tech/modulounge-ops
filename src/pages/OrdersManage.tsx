@@ -8,8 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Calendar, MapPin, User, Upload, FileText } from "lucide-react";
+import { Calendar, MapPin, User, FileText } from "lucide-react";
 import { syncOrderToChannelTalk } from "@/lib/channelTalk";
+import OrderFileUpload from "@/components/OrderFileUpload";
+import OrderInquiryButton from "@/components/OrderInquiryButton";
+import OrderMemo from "@/components/OrderMemo";
 
 interface Order {
   id: string;
@@ -22,6 +25,7 @@ interface Order {
   notes: string;
   status: string;
   completed_at: string | null;
+  partner_memo: string | null;
 }
 
 const OrdersManage = () => {
@@ -173,6 +177,27 @@ const OrdersManage = () => {
                     </div>
                   )}
 
+                  {/* Action buttons - always visible */}
+                  <div className="flex flex-wrap gap-2 pt-2 border-t">
+                    <OrderFileUpload
+                      orderId={order.id}
+                      orderNumber={order.order_number}
+                    />
+                    <OrderInquiryButton
+                      orderNumber={order.order_number}
+                      customerName={order.customer_name}
+                      serviceDate={order.service_date}
+                      serviceLocation={order.service_location}
+                      amount={order.amount}
+                    />
+                    <OrderMemo
+                      orderId={order.id}
+                      orderNumber={order.order_number}
+                      initialMemo={order.partner_memo}
+                      onMemoSaved={fetchOrders}
+                    />
+                  </div>
+
                   {order.status !== "completed" && (
                     <>
                       {selectedOrder === order.id ? (
@@ -217,17 +242,13 @@ const OrdersManage = () => {
                           </div>
                         </div>
                       ) : (
-                        <div className="flex gap-3 pt-2">
+                        <div className="pt-2">
                           <Button
                             onClick={() => setSelectedOrder(order.id)}
-                            className="flex-1 bg-gradient-primary"
+                            className="w-full bg-gradient-primary"
                           >
                             <FileText className="h-4 w-4 mr-2" />
                             완료 처리하기
-                          </Button>
-                          <Button variant="outline" className="flex-1">
-                            <Upload className="h-4 w-4 mr-2" />
-                            첨부파일
                           </Button>
                         </div>
                       )}
