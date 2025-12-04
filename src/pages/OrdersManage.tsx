@@ -12,6 +12,7 @@ import { Calendar, MapPin, User, FileText, Upload, X, Image, Loader2 } from "luc
 import { syncOrderToChannelTalk } from "@/lib/channelTalk";
 import OrderInquiryButton from "@/components/OrderInquiryButton";
 import OrderMemo from "@/components/OrderMemo";
+import OrderStatusStepper from "@/components/OrderStatusStepper";
 
 interface Order {
   id: string;
@@ -281,24 +282,14 @@ const OrdersManage = () => {
                         })}
                       </CardDescription>
                     </div>
-                    <Badge
-                      className={
-                        order.status === "completed"
-                          ? "bg-green-500"
-                          : order.status === "confirmed"
-                          ? "bg-blue-500"
-                          : "bg-yellow-500"
-                      }
-                    >
-                      {order.status === "completed" 
-                        ? "완료" 
-                        : order.status === "confirmed" 
-                        ? "확정됨" 
-                        : "확정 대기"}
-                    </Badge>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {/* Order Status Stepper */}
+                  <div className="pb-3 border-b">
+                    <OrderStatusStepper status={order.status} />
+                  </div>
+                  
                   <div className="grid gap-3">
                     <div className="flex items-center gap-2 text-sm">
                       <User className="h-4 w-4 text-muted-foreground" />
