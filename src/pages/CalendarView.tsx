@@ -73,6 +73,9 @@ const CalendarView = () => {
   }, []);
 
   const fetchEventTypes = async () => {
+    // 기본 정의된 타입들
+    const predefinedTypes = Object.keys(eventTypeColors);
+    
     // profiles에서 service_type 가져오기
     const { data: profileData } = await supabase
       .from("profiles")
@@ -85,9 +88,10 @@ const CalendarView = () => {
       .select("event_type");
     
     const profileTypes = profileData?.map(p => p.service_type).filter(Boolean) || [];
-    const eventTypes = eventData?.map(e => e.event_type).filter(Boolean) || [];
+    const eventTypesFromDb = eventData?.map(e => e.event_type).filter(Boolean) || [];
     
-    const allTypes = ["공간대관", ...new Set([...profileTypes, ...eventTypes])];
+    // 기본 타입 + DB의 타입들 병합 (중복 제거)
+    const allTypes = [...new Set([...predefinedTypes, ...profileTypes, ...eventTypesFromDb])];
     setEventTypes(allTypes as string[]);
     setSelectedEventTypes(new Set(allTypes as string[]));
   };
