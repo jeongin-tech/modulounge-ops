@@ -54,50 +54,51 @@ const Guide = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
+              <p>• 대시보드 - 오더 현황 및 통계 확인</p>
               <p>• 오더 수락 - 새로운 오더 확인 및 수락/거절</p>
               <p>• 오더 관리 - 진행 중인 오더 관리 및 완료 처리</p>
-              <p>• 정산 현황 - 본인 정산 내역 확인</p>
               <p>• 일정 보기 - 예약된 일정 캘린더 확인</p>
-              <p>• C/S - 내부직원과 메시지 소통</p>
+              <p>• 정산 현황 - 본인 정산 내역 확인</p>
+              <p>• 프로필 관리 - 내 정보 수정</p>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Badge>STAFF</Badge>
-                  내부직원 기능
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <p>• 오더 요청 - 제휴업체에 새로운 오더 요청</p>
-                <p>• 오더 전체보기 - 모든 오더 현황 조회</p>
-                <p>• 정산 관리 - 제휴업체 정산 처리</p>
-                <p>• 제휴업체 응답률관리 - 업체별 현황 확인</p>
-                <p>• 사용자 관리 - 사용자 등록/수정/삭제</p>
-                <p>• 전자서명관리 - 계약서 생성 및 관리</p>
-                <p>• 견적서 작성 - 견적서 생성</p>
-                <p>• 공간검색 - 공간 검색 도구</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Badge variant="secondary">PARTNER</Badge>
-                  제휴업체 기능
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <p>• 오더 수락 - 새로운 오더 확인 및 수락</p>
-                <p>• 오더 관리 - 진행 중인 오더 관리</p>
-                <p>• 정산 현황 - 본인 정산 내역 확인</p>
-                <p>• 일정 보기 - 예약된 일정 캘린더 확인</p>
-                <p>• C/S - 내부직원과 메시지 소통</p>
-              </CardContent>
-            </Card>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Badge>STAFF</Badge>
+                내부직원 기능 안내
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <p className="font-semibold text-primary">📋 업무 도구</p>
+                  <p>• 공간검색하기 - 파트너 공간 검색</p>
+                  <p>• 대관료계산기 - 대관료 자동 계산</p>
+                  <p>• 견적서 작성하기 - 견적서 생성/발송</p>
+                  <p>• 전자서명관리 - 계약서 생성 및 관리</p>
+                </div>
+                <div className="space-y-2">
+                  <p className="font-semibold text-primary">📦 오더 관리</p>
+                  <p>• 오더 요청 - 제휴업체에 오더 요청</p>
+                  <p>• 오더 전체보기 - 모든 오더 현황 조회/확정</p>
+                  <p>• 일정 보기 - 전체 예약 일정 캘린더</p>
+                </div>
+                <div className="space-y-2">
+                  <p className="font-semibold text-primary">💰 정산 및 관리</p>
+                  <p>• 정산 관리 - 제휴업체 정산 처리</p>
+                  <p>• 제휴업체 응답률관리 - 업체별 응답률/통계</p>
+                  <p>• 제휴업체 가격관리 - 업체별 가격 설정</p>
+                </div>
+                <div className="space-y-2">
+                  <p className="font-semibold text-primary">⚙️ 시스템</p>
+                  <p>• 사용자 관리 - 사용자 등록/수정/삭제</p>
+                  <p>• 시스템 설정 - 슬랙 연동 등 설정</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* 상세 가이드 */}
@@ -107,7 +108,7 @@ const Guide = () => {
           </CardHeader>
           <CardContent>
             <Accordion type="single" collapsible className="w-full">
-              {/* 파트너용 오더 수락 가이드 */}
+              {/* ========== 파트너용 가이드 ========== */}
               {isPartner && (
                 <AccordionItem value="order-accept">
                   <AccordionTrigger className="text-left">
@@ -137,7 +138,6 @@ const Guide = () => {
                 </AccordionItem>
               )}
 
-              {/* 파트너용 오더 관리 가이드 */}
               {isPartner && (
                 <AccordionItem value="order-manage">
                   <AccordionTrigger className="text-left">
@@ -176,7 +176,6 @@ const Guide = () => {
                 </AccordionItem>
               )}
 
-              {/* 파트너용 정산 현황 가이드 */}
               {isPartner && (
                 <AccordionItem value="partner-settlements">
                   <AccordionTrigger className="text-left">
@@ -184,14 +183,11 @@ const Guide = () => {
                   </AccordionTrigger>
                   <AccordionContent className="space-y-3 text-sm">
                     <p>완료된 오더에 대한 정산 내역을 확인할 수 있습니다.</p>
-                    <div className="space-y-2">
-                      <h4 className="font-semibold">정산 확인 방법</h4>
-                      <ol className="list-decimal list-inside space-y-1">
-                        <li>좌측 메뉴에서 "정산 현황" 클릭</li>
-                        <li>정산 예정 / 정산 완료 내역 확인</li>
-                        <li>월별 정산 금액 조회 가능</li>
-                      </ol>
-                    </div>
+                    <ol className="list-decimal list-inside space-y-1">
+                      <li>좌측 메뉴에서 "정산 현황" 클릭</li>
+                      <li>정산 예정 / 정산 완료 내역 확인</li>
+                      <li>월별 정산 금액 조회 가능</li>
+                    </ol>
                     <div className="bg-muted p-3 rounded-lg">
                       <p className="text-sm">
                         💡 정산은 관리자가 처리하며, 완료 시 알림을 받게 됩니다.
@@ -201,7 +197,6 @@ const Guide = () => {
                 </AccordionItem>
               )}
 
-              {/* 파트너용 파트너 메모 가이드 */}
               {isPartner && (
                 <AccordionItem value="partner-memo">
                   <AccordionTrigger className="text-left">
@@ -223,11 +218,228 @@ const Guide = () => {
                 </AccordionItem>
               )}
 
-              {/* STAFF용 슬랙 연동 가이드 */}
+              {/* ========== STAFF용 가이드 ========== */}
+              {!isPartner && (
+                <AccordionItem value="space-finder">
+                  <AccordionTrigger className="text-left">
+                    🔍 공간검색하기
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 text-sm">
+                    <p>고객 요청에 맞는 파트너 공간을 검색합니다.</p>
+                    <ol className="list-decimal list-inside space-y-1">
+                      <li>좌측 메뉴에서 "공간검색하기" 클릭</li>
+                      <li>지역, 서비스 유형 등 조건 설정</li>
+                      <li>검색 결과에서 적합한 공간 선택</li>
+                      <li>선택한 공간으로 오더 요청 진행</li>
+                    </ol>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              {!isPartner && (
+                <AccordionItem value="fee-calculator">
+                  <AccordionTrigger className="text-left">
+                    🧮 대관료계산기
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 text-sm">
+                    <p>대관료를 자동으로 계산합니다.</p>
+                    <ol className="list-decimal list-inside space-y-1">
+                      <li>좌측 메뉴에서 "대관료계산기" 클릭</li>
+                      <li>공간, 날짜, 시간, 인원수 입력</li>
+                      <li>시즌/요일별 가격 자동 적용</li>
+                      <li>부가세, 청소비 등 추가 비용 포함된 총액 확인</li>
+                    </ol>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <p className="text-sm">
+                        💡 제휴업체 가격관리에서 설정한 가격 정책이 자동 적용됩니다.
+                      </p>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              {!isPartner && (
+                <AccordionItem value="quote">
+                  <AccordionTrigger className="text-left">
+                    📄 견적서 작성하기
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 text-sm">
+                    <p>고객에게 발송할 견적서를 작성합니다.</p>
+                    <ol className="list-decimal list-inside space-y-1">
+                      <li>좌측 메뉴에서 "견적서 작성하기" 클릭</li>
+                      <li>고객 정보, 예약 정보 입력</li>
+                      <li>항목별 금액 입력</li>
+                      <li>견적서 미리보기 확인</li>
+                      <li>PDF 저장 또는 이미지로 저장</li>
+                    </ol>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              {!isPartner && (
+                <AccordionItem value="contracts">
+                  <AccordionTrigger className="text-left">
+                    ✍️ 전자서명관리
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 text-sm">
+                    <p>고객에게 전자서명 계약서를 발송합니다.</p>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">템플릿 관리</h4>
+                      <ol className="list-decimal list-inside space-y-1">
+                        <li>"템플릿 관리" 버튼 클릭</li>
+                        <li>새 템플릿 생성 또는 기존 템플릿 수정</li>
+                        <li>가격, 약관, 환불정책 등 설정</li>
+                      </ol>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">계약서 생성</h4>
+                      <ol className="list-decimal list-inside space-y-1">
+                        <li>"새 계약서 작성" 버튼 클릭</li>
+                        <li>템플릿 선택 후 예약 정보 입력</li>
+                        <li>생성된 링크를 고객에게 전달</li>
+                        <li>고객 서명 완료 시 계약서 확인 가능</li>
+                      </ol>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              {!isPartner && (
+                <AccordionItem value="orders">
+                  <AccordionTrigger className="text-left">
+                    📋 오더 요청 및 관리
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 text-sm">
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">오더 상태 흐름</h4>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="outline">요청됨</Badge>
+                        <span>→</span>
+                        <Badge variant="outline">수락됨</Badge>
+                        <span>→</span>
+                        <Badge variant="outline">확정됨</Badge>
+                        <span>→</span>
+                        <Badge variant="outline">완료됨</Badge>
+                        <span>→</span>
+                        <Badge variant="outline">정산완료</Badge>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">오더 요청</h4>
+                      <ol className="list-decimal list-inside space-y-1">
+                        <li>"오더 요청" 메뉴에서 제휴업체 선택</li>
+                        <li>고객 정보, 서비스 유형, 일정, 금액 입력</li>
+                        <li>"오더 요청" 버튼 클릭</li>
+                        <li>제휴업체에 알림 발송됨</li>
+                      </ol>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">오더 전체보기</h4>
+                      <ol className="list-decimal list-inside space-y-1">
+                        <li>모든 오더 현황 조회</li>
+                        <li>상태별 필터링 (요청됨/수락됨/확정됨/완료됨)</li>
+                        <li>제휴업체가 수락한 오더 "확정" 처리</li>
+                        <li>첨부파일 확인 및 관리</li>
+                      </ol>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              {!isPartner && (
+                <AccordionItem value="settlements">
+                  <AccordionTrigger className="text-left">
+                    💰 정산 관리
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 text-sm">
+                    <p>완료된 오더에 대해 정산을 처리합니다.</p>
+                    <ol className="list-decimal list-inside space-y-1">
+                      <li>"정산 관리" 메뉴에서 완료된 오더 확인</li>
+                      <li>정산 금액 확인 (수수료 자동 계산)</li>
+                      <li>정산일 선택 후 "정산 확정" 버튼 클릭</li>
+                      <li>제휴업체에 정산 완료 알림 발송</li>
+                    </ol>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <p className="text-sm">
+                        💡 제휴업체별 수수료율은 사용자 관리에서 설정합니다.
+                      </p>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              {!isPartner && (
+                <AccordionItem value="partners">
+                  <AccordionTrigger className="text-left">
+                    📊 제휴업체 응답률관리
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 text-sm">
+                    <p>제휴업체별 응답률과 통계를 확인합니다.</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>업체별 응답률, 평균 응답시간 확인</li>
+                      <li>총 요청/수락/거절/완료 오더 수 확인</li>
+                      <li>지역별, 서비스별 필터링</li>
+                      <li>응답률 높은 순서로 정렬</li>
+                      <li>업체명, 담당자명, 이메일로 검색</li>
+                    </ul>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              {!isPartner && (
+                <AccordionItem value="pricing">
+                  <AccordionTrigger className="text-left">
+                    💵 제휴업체 가격관리
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 text-sm">
+                    <p>제휴업체별 대관료 가격 정책을 설정합니다.</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>기본 가격, 인원 추가 가격 설정</li>
+                      <li>시즌별 가격 (성수기/비수기) 설정</li>
+                      <li>요일별 가격 (평일/주말) 설정</li>
+                      <li>시간대별 가격 설정</li>
+                    </ul>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <p className="text-sm">
+                        💡 설정한 가격 정책은 대관료계산기에 자동 적용됩니다.
+                      </p>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              {!isPartner && (
+                <AccordionItem value="users">
+                  <AccordionTrigger className="text-left">
+                    👥 사용자 관리
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 text-sm">
+                    <p>시스템 사용자(내부직원/제휴업체)를 관리합니다.</p>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">사용자 등록</h4>
+                      <ol className="list-decimal list-inside space-y-1">
+                        <li>"사용자 등록" 버튼 클릭</li>
+                        <li>이메일, 이름, 역할(STAFF/PARTNER) 선택</li>
+                        <li>제휴업체인 경우: 업체명, 서비스유형, 지역, 수수료율 입력</li>
+                        <li>Slack 채널 ID 입력 (메시지 연동용)</li>
+                      </ol>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">설정 항목</h4>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li><strong>수수료율</strong> - 정산 시 적용할 수수료 비율</li>
+                        <li><strong>Slack 채널 ID</strong> - 메시지 전송 대상 채널</li>
+                        <li><strong>Slack User ID</strong> - 내부직원 멘션용 (STAFF)</li>
+                      </ul>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
               {!isPartner && (
                 <AccordionItem value="slack">
                   <AccordionTrigger className="text-left">
-                    🔗 슬랙(Slack) 연동 설정 방법
+                    🔗 슬랙(Slack) 연동 설정
                   </AccordionTrigger>
                   <AccordionContent className="space-y-4 text-sm">
                     <div className="bg-muted p-4 rounded-lg">
@@ -272,12 +484,12 @@ const Guide = () => {
                     </div>
 
                     <div className="space-y-3">
-                      <h4 className="font-semibold">3. Event Subscriptions 설정 (메시지 수신용)</h4>
+                      <h4 className="font-semibold">3. Event Subscriptions 설정</h4>
                       <ol className="list-decimal list-inside space-y-2 ml-2">
                         <li>좌측 메뉴에서 "Event Subscriptions" 클릭</li>
                         <li>"Enable Events" 토글 ON</li>
                         <li>
-                          Request URL에 Edge Function URL 입력:
+                          Request URL에 입력:
                           <code className="block bg-muted px-2 py-1 rounded mt-1 text-xs break-all">
                             https://hunwnggzidopjhovvika.supabase.co/functions/v1/slack-events
                           </code>
@@ -302,166 +514,44 @@ const Guide = () => {
                     </div>
 
                     <div className="space-y-3">
-                      <h4 className="font-semibold">5. 제휴업체별 채널 생성 및 연결</h4>
+                      <h4 className="font-semibold">5. 제휴업체별 채널 연결</h4>
                       <ol className="list-decimal list-inside space-y-2 ml-2">
                         <li>Slack에서 제휴업체별 채널 생성 (예: #partner-업체명)</li>
                         <li>생성한 채널에 봇 앱 초대 (/invite @봇이름)</li>
                         <li>
-                          채널 ID 확인 방법:
-                          <ul className="list-disc list-inside ml-4 mt-1 text-muted-foreground">
-                            <li>채널명 우클릭 → "채널 세부정보 보기"</li>
-                            <li>하단에 채널 ID 표시 (C로 시작하는 영문숫자)</li>
-                          </ul>
+                          채널 ID 확인: 채널명 우클릭 → "채널 세부정보 보기" → 하단 ID
                         </li>
                         <li>
-                          <span className="font-medium">사용자 관리</span>에서 해당 제휴업체의 
-                          <span className="font-medium text-primary"> Slack 채널 ID</span> 입력
-                        </li>
-                      </ol>
-                    </div>
-
-                    <div className="space-y-3">
-                      <h4 className="font-semibold">6. 내부직원 Slack User ID 설정</h4>
-                      <ol className="list-decimal list-inside space-y-2 ml-2">
-                        <li>
-                          Slack User ID 확인 방법:
-                          <ul className="list-disc list-inside ml-4 mt-1 text-muted-foreground">
-                            <li>Slack에서 본인 프로필 클릭</li>
-                            <li>"프로필 보기" 클릭</li>
-                            <li>더보기(⋯) → "멤버 ID 복사"</li>
-                          </ul>
-                        </li>
-                        <li>
-                          <span className="font-medium">사용자 관리</span>에서 내부직원의 
-                          <span className="font-medium text-primary"> Slack User ID</span> 입력
+                          <strong>사용자 관리</strong>에서 해당 업체의 Slack 채널 ID 입력
                         </li>
                       </ol>
                     </div>
 
                     <div className="bg-primary/10 p-4 rounded-lg">
                       <p className="font-semibold mb-2">✅ 연동 완료 후</p>
-                      <p>• ADMIN에서 메시지 전송 시 → 해당 업체 Slack 채널로 전달</p>
-                      <p>• Slack 채널에서 답장 시 → ADMIN C/S 화면에 표시</p>
+                      <p>• ADMIN에서 메시지 전송 → 해당 업체 Slack 채널로 전달</p>
+                      <p>• Slack에서 답장 → ADMIN에 표시</p>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
               )}
 
-              {/* STAFF용 오더 관리 가이드 */}
-              {!isPartner && (
-                <AccordionItem value="orders">
-                  <AccordionTrigger className="text-left">
-                    📋 오더 관리 프로세스
-                  </AccordionTrigger>
-                  <AccordionContent className="space-y-3 text-sm">
-                    <div className="space-y-2">
-                      <h4 className="font-semibold">오더 상태 흐름</h4>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="outline">요청됨</Badge>
-                        <span>→</span>
-                        <Badge variant="outline">수락됨</Badge>
-                        <span>→</span>
-                        <Badge variant="outline">확정됨</Badge>
-                        <span>→</span>
-                        <Badge variant="outline">완료됨</Badge>
-                        <span>→</span>
-                        <Badge variant="outline">정산완료</Badge>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="font-semibold">STAFF:</p>
-                      <p>오더 요청 → 제휴업체 선택 → 서비스 정보 입력 → 요청</p>
-                    </div>
-                    <div>
-                      <p className="font-semibold">PARTNER:</p>
-                      <p>오더 수락에서 확인 → 수락/거절 → 오더 관리에서 진행상황 업데이트</p>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              )}
-
-              {/* STAFF용 정산 가이드 */}
-              {!isPartner && (
-                <AccordionItem value="settlements">
-                  <AccordionTrigger className="text-left">
-                    💰 정산 관리 방법
-                  </AccordionTrigger>
-                  <AccordionContent className="space-y-3 text-sm">
-                    <p>완료된 오더에 대해 정산을 진행합니다.</p>
-                    <div>
-                      <p className="font-semibold">STAFF - 정산 관리:</p>
-                      <p>• 완료된 오더 목록 확인</p>
-                      <p>• 정산 금액 확인 후 정산 처리</p>
-                      <p>• 정산 완료 시 업체에 알림</p>
-                    </div>
-                    <div>
-                      <p className="font-semibold">PARTNER - 정산 현황:</p>
-                      <p>• 본인의 정산 내역 확인</p>
-                      <p>• 월별 정산 금액 조회</p>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              )}
-
-              {/* STAFF용 전자서명 가이드 */}
-              {!isPartner && (
-                <AccordionItem value="contracts">
-                  <AccordionTrigger className="text-left">
-                    ✍️ 전자서명 계약서 생성
-                  </AccordionTrigger>
-                  <AccordionContent className="space-y-3 text-sm">
-                    <p>고객에게 전자서명 계약서를 발송할 수 있습니다.</p>
-                    <ol className="list-decimal list-inside space-y-1">
-                      <li>전자서명관리 → 템플릿 관리에서 계약서 템플릿 생성</li>
-                      <li>계약서 목록에서 "새 계약서 작성" 클릭</li>
-                      <li>템플릿 선택 후 예약 정보 입력</li>
-                      <li>생성된 링크를 고객에게 전달</li>
-                      <li>고객이 서명 완료 시 계약서 확인 가능</li>
-                    </ol>
-                  </AccordionContent>
-                </AccordionItem>
-              )}
-
-              {/* 공통 - 일정 관리 가이드 */}
+              {/* ========== 공통 가이드 ========== */}
               <AccordionItem value="calendar">
                 <AccordionTrigger className="text-left">
                   📅 일정 보기 사용법
                 </AccordionTrigger>
                 <AccordionContent className="space-y-3 text-sm">
                   <p>캘린더에서 예약된 일정을 확인할 수 있습니다.</p>
-                  <p>• 날짜 클릭 시 해당 날짜의 일정 목록 표시</p>
-                  <p>• 오더와 연동된 일정 자동 표시</p>
-                  <p>• 색상으로 일정 유형 구분</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>날짜 클릭 시 해당 날짜의 일정 목록 표시</li>
+                    <li>오더와 연동된 일정 자동 표시</li>
+                    <li>색상으로 일정 유형 구분</li>
+                  </ul>
                   {isPartner && (
                     <div className="bg-muted p-3 rounded-lg">
                       <p className="text-sm">
                         💡 오더 수락 시 자동으로 캘린더에 일정이 등록됩니다.
-                      </p>
-                    </div>
-                  )}
-                </AccordionContent>
-              </AccordionItem>
-
-              {/* 공통 - C/S 메시지 가이드 */}
-              <AccordionItem value="messages">
-                <AccordionTrigger className="text-left">
-                  💬 C/S 메시지 사용법
-                </AccordionTrigger>
-                <AccordionContent className="space-y-3 text-sm">
-                  <p>
-                    {isPartner 
-                      ? "내부직원과 메시지로 소통할 수 있습니다."
-                      : "제휴업체와 메시지로 소통할 수 있습니다."}
-                  </p>
-                  <ol className="list-decimal list-inside space-y-1">
-                    <li>좌측 메뉴에서 "C/S" 클릭</li>
-                    <li>메시지 입력 후 전송</li>
-                    <li>읽지 않은 메시지는 알림으로 표시됩니다</li>
-                  </ol>
-                  {isPartner && (
-                    <div className="bg-muted p-3 rounded-lg">
-                      <p className="text-sm">
-                        💡 오더 관련 문의는 "오더 문의하기" 버튼을 이용하면 더 빠르게 처리됩니다.
                       </p>
                     </div>
                   )}
@@ -475,7 +565,7 @@ const Guide = () => {
         <Card>
           <CardContent className="pt-6">
             <p className="text-center text-muted-foreground">
-              추가 문의사항은 C/S 메뉴를 통해 문의해주세요.
+              추가 문의사항은 담당자에게 문의해주세요.
             </p>
           </CardContent>
         </Card>
