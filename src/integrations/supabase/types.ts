@@ -444,6 +444,7 @@ export type Database = {
           notes: string | null
           order_number: string
           partner_id: string
+          partner_memo: string | null
           service_date: string
           service_location: string
           service_type: string
@@ -461,6 +462,7 @@ export type Database = {
           notes?: string | null
           order_number: string
           partner_id: string
+          partner_memo?: string | null
           service_date: string
           service_location: string
           service_type: string
@@ -478,6 +480,7 @@ export type Database = {
           notes?: string | null
           order_number?: string
           partner_id?: string
+          partner_memo?: string | null
           service_date?: string
           service_location?: string
           service_type?: string
