@@ -15,6 +15,26 @@ interface Stats {
   requestedOrders: number;
 }
 
+interface RecentOrder {
+  id: string;
+  order_number: string;
+  customer_name: string;
+  service_type: string;
+  service_date: string;
+  status: string;
+  amount: number;
+  created_at: string;
+}
+
+const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+  requested: { label: "수락 대기", variant: "secondary" },
+  accepted: { label: "수락됨", variant: "default" },
+  confirmed: { label: "확정", variant: "default" },
+  completed: { label: "완료", variant: "outline" },
+  settled: { label: "정산완료", variant: "outline" },
+  cancelled: { label: "취소", variant: "destructive" },
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState<Stats>({
@@ -24,6 +44,7 @@ const Dashboard = () => {
     totalSettlements: 0,
     requestedOrders: 0,
   });
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [userRole, setUserRole] = useState<"STAFF" | "PARTNER" | null>(null);
 
   useEffect(() => {
@@ -72,6 +93,20 @@ const Dashboard = () => {
         const { data: settlements } = await settlementsQuery;
 
         const totalSettlements = settlements?.reduce((sum, s) => sum + Number(s.amount), 0) || 0;
+
+        // 최근 오더 5개 가져오기
+        let recentOrdersQuery = supabase
+          .from("orders")
+          .select("id, order_number, customer_name, service_type, service_date, status, amount, created_at")
+          .order("created_at", { ascending: false })
+          .limit(5);
+
+        if (profile.role === "PARTNER") {
+          recentOrdersQuery = recentOrdersQuery.eq("partner_id", user.id);
+        }
+
+        const { data: recentOrdersData } = await recentOrdersQuery;
+        setRecentOrders(recentOrdersData || []);
 
         setStats({
           totalOrders: totalCount || 0,
@@ -189,14 +224,49 @@ const Dashboard = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>최근 활동</CardTitle>
-            <CardDescription>최근 오더 및 활동 내역</CardDescription>
+            <CardTitle>최근 오더</CardTitle>
+            <CardDescription>최근 등록된 오더 목록</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8 text-muted-foreground">
-              <p>최근 활동 내역이 없습니다.</p>
-              <p className="text-sm mt-2">새로운 오더가 생성되면 여기에 표시됩니다.</p>
-            </div>
+            {recentOrders.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>최근 오더가 없습니다.</p>
+                <p className="text-sm mt-2">새로운 오더가 생성되면 여기에 표시됩니다.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recentOrders.map((order) => (
+                  <div
+                    key={order.id}
+                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
+                    onClick={() => navigate("/orders/manage")}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <ClipboardList className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{order.order_number}</span>
+                          <Badge variant={statusLabels[order.status]?.variant || "secondary"}>
+                            {statusLabels[order.status]?.label || order.status}
+                          </Badge>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {order.customer_name} · {order.service_type}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold">₩{order.amount?.toLocaleString()}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(order.created_at).toLocaleDateString("ko-KR")}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
