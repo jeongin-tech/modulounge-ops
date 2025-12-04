@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,11 +8,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Calendar, MapPin, User, FileText, Upload, X, Image, Loader2 } from "lucide-react";
+import { Calendar, MapPin, User, FileText, Upload, X, Image, Loader2, Search } from "lucide-react";
 import { syncOrderToChannelTalk } from "@/lib/channelTalk";
 import OrderInquiryButton from "@/components/OrderInquiryButton";
 import OrderMemo from "@/components/OrderMemo";
 import OrderStatusStepper from "@/components/OrderStatusStepper";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Order {
   id: string;
@@ -45,10 +52,12 @@ const OrdersManage = () => {
   const [files, setFiles] = useState<OrderFile[]>([]);
   const [uploading, setUploading] = useState(false);
   const [filesLoading, setFilesLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [statusFilter]);
 
   useEffect(() => {
     if (selectedOrder) {
@@ -63,12 +72,19 @@ const OrdersManage = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data, error } = await supabase
+      let query = supabase
         .from("orders")
         .select("*")
         .eq("partner_id", user.id)
-        .in("status", ["accepted", "confirmed", "completed"])
-        .order("service_date", { ascending: true });
+        .order("created_at", { ascending: false });
+
+      if (statusFilter !== "all") {
+        query = query.eq("status", statusFilter as any);
+      } else {
+        query = query.in("status", ["accepted", "confirmed", "completed"]);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setOrders(data || []);
@@ -78,6 +94,16 @@ const OrdersManage = () => {
       setLoading(false);
     }
   };
+
+  const filteredOrders = useMemo(() => {
+    if (!searchQuery.trim()) return orders;
+    const query = searchQuery.toLowerCase();
+    return orders.filter(
+      (order) =>
+        order.order_number.toLowerCase().includes(query) ||
+        order.customer_name.toLowerCase().includes(query)
+    );
+  }, [orders, searchQuery]);
 
   const fetchFiles = async (orderId: string) => {
     setFilesLoading(true);
@@ -248,11 +274,35 @@ const OrdersManage = () => {
   return (
     <DashboardLayout currentPage="/orders/manage">
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            오더 관리
-          </h1>
-          <p className="text-muted-foreground mt-2">수락한 오더를 관리하고 완료 처리하세요</p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              오더 관리
+            </h1>
+            <p className="text-muted-foreground mt-2">수락한 오더를 관리하고 완료 처리하세요</p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="오더번호, 고객명 검색"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 w-full sm:w-[200px]"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-[140px]">
+                <SelectValue placeholder="상태 필터" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체</SelectItem>
+                <SelectItem value="accepted">수락됨</SelectItem>
+                <SelectItem value="confirmed">확정됨</SelectItem>
+                <SelectItem value="completed">완료</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Status Guide */}
@@ -280,15 +330,17 @@ const OrdersManage = () => {
           </CardContent>
         </Card>
 
-        {orders.length === 0 ? (
+        {filteredOrders.length === 0 ? (
           <Card>
             <CardContent className="text-center py-12">
-              <p className="text-muted-foreground">관리할 오더가 없습니다.</p>
+              <p className="text-muted-foreground">
+                {searchQuery ? "검색 결과가 없습니다." : "관리할 오더가 없습니다."}
+              </p>
             </CardContent>
           </Card>
         ) : (
           <div className="grid gap-6">
-            {orders.map((order) => (
+            {filteredOrders.map((order) => (
               <Card key={order.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between">
