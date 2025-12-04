@@ -5,7 +5,14 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ClipboardList, Calendar, DollarSign, Bell, ArrowRight } from "lucide-react";
+import { ClipboardList, Calendar, Bell, ArrowRight } from "lucide-react";
+
+// 원화 아이콘 컴포넌트
+const WonSign = ({ className }: { className?: string }) => (
+  <div className={className}>
+    <span className="font-bold text-lg">₩</span>
+  </div>
+);
 
 interface Stats {
   totalOrders: number;
@@ -163,7 +170,7 @@ const Dashboard = () => {
     {
       title: userRole === "STAFF" ? "총 정산금액" : "내 정산금액",
       value: `₩${stats.totalSettlements.toLocaleString()}`,
-      icon: <DollarSign className="h-8 w-8 text-primary" />,
+      icon: <WonSign className="h-8 w-8 text-primary flex items-center justify-center" />,
       description: "정산 완료 금액",
     },
   ];

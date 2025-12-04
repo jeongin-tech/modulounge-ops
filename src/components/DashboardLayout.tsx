@@ -9,7 +9,6 @@ import {
   LayoutDashboard,
   ClipboardList,
   Calendar,
-  DollarSign,
   Users,
   Settings,
   LogOut,
@@ -24,6 +23,13 @@ import {
   User as UserIcon,
   ExternalLink,
 } from "lucide-react";
+
+// 원화 아이콘 컴포넌트
+const WonSign = ({ className }: { className?: string }) => (
+  <div className={className}>
+    <span className="font-bold">₩</span>
+  </div>
+);
 import ChannelTalk from "@/components/ChannelTalk";
 import NotificationBell from "@/components/NotificationBell";
 import logo from "@/assets/logo.jpg";
@@ -219,14 +225,14 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
     },
     // PARTNER 전용
     {
-      icon: <DollarSign className="h-5 w-5" />,
+      icon: <WonSign className="h-5 w-5 flex items-center justify-center" />,
       label: "정산 현황",
       path: "/settlements",
       roles: ["PARTNER"],
     },
     // STAFF 전용 (계속)
     {
-      icon: <DollarSign className="h-5 w-5" />,
+      icon: <WonSign className="h-5 w-5 flex items-center justify-center" />,
       label: "정산 관리",
       path: "/settlements/manage",
       roles: ["STAFF"],
