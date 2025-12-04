@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { syncOrderToChannelTalk } from "@/lib/channelTalk";
 
 interface Partner {
   id: string;
@@ -76,7 +77,7 @@ const OrdersRequest = () => {
 
       const orderNumber = generateOrderNumber();
 
-      const { error } = await supabase.from("orders").insert({
+      const { data: insertedOrder, error } = await supabase.from("orders").insert({
         order_number: orderNumber,
         partner_id: selectedPartner,
         staff_id: user.id,
@@ -88,9 +89,14 @@ const OrdersRequest = () => {
         amount: parseFloat(amount),
         notes,
         status: "requested",
-      });
+      }).select().single();
 
       if (error) throw error;
+
+      // 채널톡에 주문 동기화
+      if (insertedOrder) {
+        syncOrderToChannelTalk(insertedOrder.id, 'created');
+      }
 
       toast.success("오더 요청이 전송되었습니다!");
       
