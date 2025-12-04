@@ -225,7 +225,7 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
     },
     {
       icon: <Users className="h-5 w-5" />,
-      label: "제휴업체 대시보드",
+      label: "제휴업체 응답률관리",
       path: "/partners",
       roles: ["STAFF"],
     },
