@@ -163,6 +163,15 @@ const SettlementsManage = () => {
         .update({ status: "settled" })
         .eq("id", order.id);
 
+      // Send notification to partner
+      await supabase.from("notifications").insert({
+        user_id: order.partner_id,
+        title: "정산이 확정되었습니다",
+        message: `오더번호 ${order.order_number} (${order.customer_name})의 정산이 확정되었습니다. 입금 예정일: ${new Date(paymentDate).toLocaleDateString("ko-KR")}`,
+        type: "success",
+        related_order_id: order.id,
+      });
+
       toast.success("정산이 확정되었습니다!");
       setSelectedOrder(null);
       setPaymentDate("");
