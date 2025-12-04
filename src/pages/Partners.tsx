@@ -221,7 +221,7 @@ const Partners = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              제휴업체 대시보드
+              제휴업체 응답률관리
             </h1>
             <p className="text-muted-foreground mt-2">
               각 제휴업체별 매출, 정산, 응답률 등을 확인하세요
