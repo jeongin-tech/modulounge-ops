@@ -75,10 +75,10 @@ const ChannelTalk = ({ pluginKey, user }: ChannelTalkProps) => {
         mobileNumber: user.mobileNumber || null,
         companyName: user.companyName || null,
         // 커스텀 프로필 필드 (채널톡 고객 연락처에 표시됨)
-        사업자등록번호: user.businessRegistrationNumber || null,
-        대표자명: user.representativeName || null,
-        서비스유형: user.serviceType || null,
-        서비스지역: user.serviceRegions?.join(', ') || null,
+        businessRegistrationNumber: user.businessRegistrationNumber || null,
+        representativeName: user.representativeName || null,
+        serviceType: user.serviceType || null,
+        serviceRegions: user.serviceRegions?.join(', ') || null,
       };
     }
 
