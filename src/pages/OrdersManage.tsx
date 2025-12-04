@@ -285,10 +285,16 @@ const OrdersManage = () => {
                       className={
                         order.status === "completed"
                           ? "bg-green-500"
-                          : "bg-gradient-primary"
+                          : order.status === "confirmed"
+                          ? "bg-blue-500"
+                          : "bg-yellow-500"
                       }
                     >
-                      {order.status === "completed" ? "완료" : "진행중"}
+                      {order.status === "completed" 
+                        ? "완료" 
+                        : order.status === "confirmed" 
+                        ? "확정됨" 
+                        : "확정 대기"}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -337,7 +343,15 @@ const OrdersManage = () => {
                     />
                   </div>
 
-                  {order.status !== "completed" && (
+                  {order.status === "accepted" && (
+                    <div className="p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg">
+                      <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                        관리자 확정 대기중입니다. 확정 후 완료 처리가 가능합니다.
+                      </p>
+                    </div>
+                  )}
+
+                  {order.status === "confirmed" && (
                     <>
                       {selectedOrder === order.id ? (
                         <div className="space-y-4 pt-2 border-t">
