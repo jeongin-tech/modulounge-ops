@@ -217,6 +217,34 @@ const Guide = () => {
                 </AccordionItem>
               )}
 
+              {isPartner && (
+                <AccordionItem value="cs-inquiry">
+                  <AccordionTrigger className="text-left">
+                    💬 C/S 문의방법
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 text-sm">
+                    <p>문의사항이 있을 경우 아래 방법으로 연락해주세요.</p>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">1. 채널톡 채팅상담</h4>
+                      <p className="text-muted-foreground">
+                        화면 우측 하단의 <strong>채널톡 채팅상담 아이콘</strong>을 클릭하여 실시간 상담이 가능합니다.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">2. 오더별 문의</h4>
+                      <p className="text-muted-foreground">
+                        "오더 관리" 메뉴에서 각 오더 하단의 <strong>"이 오더 문의"</strong> 버튼을 클릭하면 해당 오더에 대해 바로 문의할 수 있습니다.
+                      </p>
+                    </div>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <p className="text-sm">
+                        💡 오더 관련 문의는 "이 오더 문의" 버튼을 이용하시면 담당자가 빠르게 확인할 수 있습니다.
+                      </p>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
               {/* ========== STAFF용 가이드 ========== */}
               {!isPartner && (
                 <AccordionItem value="space-finder">
