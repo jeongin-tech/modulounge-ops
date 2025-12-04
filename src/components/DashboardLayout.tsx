@@ -145,23 +145,37 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
   };
 
   const menuItems: MenuItem[] = [
+    // STAFF & PARTNER 공통
     {
       icon: <LayoutDashboard className="h-5 w-5" />,
       label: "대시보드",
       path: "/",
       roles: ["STAFF", "PARTNER"],
     },
+    // STAFF 전용 (순서대로)
     {
-      icon: <ClipboardList className="h-5 w-5" />,
-      label: "오더 수락",
-      path: "/orders/accept",
-      roles: ["PARTNER"],
+      icon: <Search className="h-5 w-5" />,
+      label: "공간검색하기",
+      path: "/space-finder",
+      roles: ["STAFF"],
     },
     {
-      icon: <ClipboardList className="h-5 w-5" />,
-      label: "오더 관리",
-      path: "/orders/manage",
-      roles: ["PARTNER"],
+      icon: <Calculator className="h-5 w-5" />,
+      label: "대관료계산기",
+      path: "/fee-calculator",
+      roles: ["STAFF"],
+    },
+    {
+      icon: <FileText className="h-5 w-5" />,
+      label: "견적서 작성하기",
+      path: "/quote",
+      roles: ["STAFF"],
+    },
+    {
+      icon: <FileSignature className="h-5 w-5" />,
+      label: "전자서명관리",
+      path: "/contracts",
+      roles: ["STAFF"],
     },
     {
       icon: <ClipboardList className="h-5 w-5" />,
@@ -175,18 +189,34 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
       path: "/orders/all",
       roles: ["STAFF"],
     },
+    // PARTNER 전용
+    {
+      icon: <ClipboardList className="h-5 w-5" />,
+      label: "오더 수락",
+      path: "/orders/accept",
+      roles: ["PARTNER"],
+    },
+    {
+      icon: <ClipboardList className="h-5 w-5" />,
+      label: "오더 관리",
+      path: "/orders/manage",
+      roles: ["PARTNER"],
+    },
+    // STAFF & PARTNER 공통
     {
       icon: <Calendar className="h-5 w-5" />,
       label: "일정 보기",
       path: "/calendar",
       roles: ["STAFF", "PARTNER"],
     },
+    // PARTNER 전용
     {
       icon: <DollarSign className="h-5 w-5" />,
       label: "정산 현황",
       path: "/settlements",
       roles: ["PARTNER"],
     },
+    // STAFF 전용 (계속)
     {
       icon: <DollarSign className="h-5 w-5" />,
       label: "정산 관리",
@@ -211,42 +241,21 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
       path: "/users",
       roles: ["STAFF"],
     },
-    {
-      icon: <FileSignature className="h-5 w-5" />,
-      label: "전자서명관리",
-      path: "/contracts",
-      roles: ["STAFF"],
-    },
-    {
-      icon: <FileText className="h-5 w-5" />,
-      label: "견적서 작성하기",
-      path: "/quote",
-      roles: ["STAFF"],
-    },
-    {
-      icon: <Search className="h-5 w-5" />,
-      label: "공간검색하기",
-      path: "/space-finder",
-      roles: ["STAFF"],
-    },
-    {
-      icon: <Calculator className="h-5 w-5" />,
-      label: "대관료계산기",
-      path: "/fee-calculator",
-      roles: ["STAFF"],
-    },
+    // STAFF & PARTNER 공통
     {
       icon: <BookOpen className="h-5 w-5" />,
       label: "사용가이드",
       path: "/guide",
       roles: ["STAFF", "PARTNER"],
     },
+    // PARTNER 전용
     {
       icon: <UserIcon className="h-5 w-5" />,
       label: "프로필 관리",
       path: "/profile",
       roles: ["PARTNER"],
     },
+    // STAFF 전용
     {
       icon: <Settings className="h-5 w-5" />,
       label: "시스템 설정",
