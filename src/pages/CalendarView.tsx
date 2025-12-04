@@ -31,6 +31,32 @@ interface Event {
   };
 }
 
+// 이벤트 타입별 색상 팔레트
+const eventTypeColors: Record<string, string> = {
+  "공간대관": "#3b82f6", // blue
+  "파티룸": "#8b5cf6",   // violet
+  "케이터링": "#f59e0b", // amber
+  "사진촬영": "#10b981", // emerald
+  "영상촬영": "#06b6d4", // cyan
+  "청소": "#6366f1",     // indigo
+  "인테리어": "#ec4899", // pink
+  "기타": "#64748b",     // slate
+};
+
+// 동적으로 색상 할당
+const getEventTypeColor = (eventType: string): string => {
+  if (eventTypeColors[eventType]) {
+    return eventTypeColors[eventType];
+  }
+  // 등록되지 않은 타입은 해시 기반 색상 생성
+  const colors = ["#ef4444", "#f97316", "#84cc16", "#14b8a6", "#0ea5e9", "#a855f7", "#f43f5e"];
+  let hash = 0;
+  for (let i = 0; i < eventType.length; i++) {
+    hash = eventType.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+};
+
 const CalendarView = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -174,6 +200,10 @@ const CalendarView = () => {
                     checked={selectedEventTypes.has(type)}
                     onCheckedChange={() => toggleEventType(type)}
                   />
+                  <div 
+                    className="w-3 h-3 rounded-full shrink-0"
+                    style={{ backgroundColor: getEventTypeColor(type) }}
+                  />
                   <Label 
                     htmlFor={`type-${type}`} 
                     className="cursor-pointer text-sm"
@@ -250,8 +280,8 @@ const CalendarView = () => {
                               key={event.id}
                               className="text-xs px-1.5 py-0.5 rounded truncate w-full"
                               style={{ 
-                                backgroundColor: event.color + '40',
-                                borderLeft: `3px solid ${event.color}`
+                                backgroundColor: getEventTypeColor(event.event_type) + '40',
+                                borderLeft: `3px solid ${getEventTypeColor(event.event_type)}`
                               }}
                               title={event.title}
                             >
@@ -288,7 +318,7 @@ const CalendarView = () => {
                     key={event.id}
                     className="p-3 border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
                     onClick={() => handleEditEvent(event)}
-                    style={{ borderLeftWidth: "3px", borderLeftColor: event.color }}
+                    style={{ borderLeftWidth: "3px", borderLeftColor: getEventTypeColor(event.event_type) }}
                   >
                     <div className="flex items-start justify-between mb-1">
                       <p className="font-semibold text-sm line-clamp-1">{event.title}</p>
