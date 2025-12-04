@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Calendar, MapPin, User } from "lucide-react";
 import { syncOrderToChannelTalk } from "@/lib/channelTalk";
+import OrderStatusStepper from "@/components/OrderStatusStepper";
 
 interface Order {
   id: string;
@@ -164,10 +165,14 @@ const OrdersAccept = () => {
                         })}
                       </CardDescription>
                     </div>
-                    <Badge className="bg-gradient-primary">수락 대기</Badge>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {/* Order Status Stepper */}
+                  <div className="pb-3 border-b">
+                    <OrderStatusStepper status={order.status} />
+                  </div>
+
                   <div className="grid gap-3">
                     <div className="flex items-center gap-2 text-sm">
                       <User className="h-4 w-4 text-muted-foreground" />

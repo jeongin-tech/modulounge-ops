@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import OrderStatusStepper from "@/components/OrderStatusStepper";
 
 interface Order {
   id: string;
@@ -174,7 +175,11 @@ const OrdersAll = () => {
                         })}
                       </p>
                     </div>
-                    {getStatusBadge(order.status)}
+                  </div>
+
+                  {/* Order Status Stepper */}
+                  <div className="py-3 border-b">
+                    <OrderStatusStepper status={order.status} />
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
