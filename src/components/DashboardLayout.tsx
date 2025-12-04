@@ -22,6 +22,7 @@ import {
   Calculator,
   Tag,
   User as UserIcon,
+  ExternalLink,
 } from "lucide-react";
 import ChannelTalk from "@/components/ChannelTalk";
 import NotificationBell from "@/components/NotificationBell";
@@ -151,6 +152,13 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
       label: "대시보드",
       path: "/",
       roles: ["STAFF", "PARTNER"],
+    },
+    // STAFF 전용 - 아임웹 로그인
+    {
+      icon: <ExternalLink className="h-5 w-5" />,
+      label: "아임웹 로그인",
+      path: "/imweb",
+      roles: ["STAFF"],
     },
     // STAFF 전용 (순서대로)
     {
