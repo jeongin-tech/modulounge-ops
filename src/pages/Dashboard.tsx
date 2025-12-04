@@ -1,24 +1,28 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ClipboardList, Calendar, DollarSign, MessageSquare } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ClipboardList, Calendar, DollarSign, Bell, ArrowRight } from "lucide-react";
 
 interface Stats {
   totalOrders: number;
   pendingOrders: number;
   completedOrders: number;
   totalSettlements: number;
-  unreadMessages: number;
+  requestedOrders: number;
 }
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<Stats>({
     totalOrders: 0,
     pendingOrders: 0,
     completedOrders: 0,
     totalSettlements: 0,
-    unreadMessages: 0,
+    requestedOrders: 0,
   });
   const [userRole, setUserRole] = useState<"STAFF" | "PARTNER" | null>(null);
 
@@ -43,8 +47,23 @@ const Dashboard = () => {
         }
 
         const { count: totalCount } = await ordersQuery;
-        const { count: pendingCount } = await ordersQuery.in("status", ["requested", "accepted"]);
-        const { count: completedCount } = await ordersQuery.eq("status", "completed");
+        const { count: pendingCount } = await supabase
+          .from("orders")
+          .select("*", { count: "exact", head: true })
+          .eq("partner_id", user.id)
+          .in("status", ["requested", "accepted"]);
+        const { count: completedCount } = await supabase
+          .from("orders")
+          .select("*", { count: "exact", head: true })
+          .eq("partner_id", user.id)
+          .eq("status", "completed");
+
+        // 수락 대기중인 오더 수
+        const { count: requestedCount } = await supabase
+          .from("orders")
+          .select("*", { count: "exact", head: true })
+          .eq("partner_id", user.id)
+          .eq("status", "requested");
 
         let settlementsQuery = supabase.from("settlements").select("amount", { count: "exact" });
         if (profile.role === "PARTNER") {
@@ -54,23 +73,37 @@ const Dashboard = () => {
 
         const totalSettlements = settlements?.reduce((sum, s) => sum + Number(s.amount), 0) || 0;
 
-        const { count: unreadCount } = await supabase
-          .from("messages")
-          .select("*", { count: "exact" })
-          .eq("receiver_id", user.id)
-          .eq("is_read", false);
-
         setStats({
           totalOrders: totalCount || 0,
           pendingOrders: pendingCount || 0,
           completedOrders: completedCount || 0,
           totalSettlements,
-          unreadMessages: unreadCount || 0,
+          requestedOrders: requestedCount || 0,
         });
       }
     };
 
     fetchStats();
+
+    // 실시간 오더 업데이트 구독
+    const channel = supabase
+      .channel("dashboard-orders")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orders",
+        },
+        () => {
+          fetchStats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const statCards = [
@@ -98,12 +131,6 @@ const Dashboard = () => {
       icon: <DollarSign className="h-8 w-8 text-primary" />,
       description: "정산 완료 금액",
     },
-    {
-      title: "읽지 않은 메시지",
-      value: stats.unreadMessages,
-      icon: <MessageSquare className="h-8 w-8 text-secondary" />,
-      description: "새로운 메시지",
-    },
   ];
 
   return (
@@ -118,7 +145,34 @@ const Dashboard = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* 대기 중인 오더 알림 카드 */}
+        {userRole === "PARTNER" && stats.requestedOrders > 0 && (
+          <Card className="border-primary/50 bg-primary/5 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/orders/accept")}>
+            <CardContent className="flex items-center justify-between p-6">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Bell className="h-6 w-6 text-primary animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-lg">수락 대기 중인 오더</h3>
+                    <Badge variant="destructive" className="text-sm">
+                      {stats.requestedOrders}건
+                    </Badge>
+                  </div>
+                  <p className="text-muted-foreground text-sm">
+                    새로운 오더가 도착했습니다. 확인 후 수락해주세요.
+                  </p>
+                </div>
+              </div>
+              <Button variant="ghost" size="icon">
+                <ArrowRight className="h-5 w-5" />
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {statCards.map((card, index) => (
             <Card key={index} className="hover:shadow-lg transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -136,7 +190,7 @@ const Dashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle>최근 활동</CardTitle>
-            <CardDescription>최근 오더 및 메시지 활동 내역</CardDescription>
+            <CardDescription>최근 오더 및 활동 내역</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-center py-8 text-muted-foreground">
