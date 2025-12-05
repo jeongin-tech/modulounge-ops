@@ -299,7 +299,7 @@ const Auth = () => {
 
                       {selectedRegions.length === 0 && (
                         <p className="text-sm text-muted-foreground">
-                          최소 1개 이상의 서비스 지역을 선택해주세요
+                          최소 1개 이상의 서비스 지역을 선택한 뒤 지역추가를 눌러주세요
                         </p>
                       )}
                     </div>
