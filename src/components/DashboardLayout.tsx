@@ -63,6 +63,7 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
   } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -85,11 +86,18 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
   useEffect(() => {
     if (user) {
       const fetchUserProfile = async () => {
-        const { data } = await supabase
+        setIsLoading(true);
+        const { data, error } = await supabase
           .from("profiles")
           .select("role, full_name, phone, company_name, business_registration_number, representative_name, service_type, service_regions")
           .eq("id", user.id)
           .single();
+        
+        if (error) {
+          console.error("Error fetching profile:", error);
+          setIsLoading(false);
+          return;
+        }
         
         if (data) {
           setUserRole(data.role as "STAFF" | "PARTNER");
@@ -103,8 +111,11 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
             service_regions: data.service_regions as string[] || undefined,
           });
         }
+        setIsLoading(false);
       };
       fetchUserProfile();
+    } else {
+      setIsLoading(false);
     }
   }, [user]);
 
@@ -281,6 +292,17 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
   const filteredMenuItems = menuItems.filter((item) =>
     userRole ? item.roles.includes(userRole) : false
   );
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-muted-foreground">로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
