@@ -32,22 +32,6 @@ BEGIN
 END;
 $$;
 
--- 역할 확인 함수 (RLS 정책에서 사용)
-CREATE OR REPLACE FUNCTION public.has_role(_user_id UUID, _role app_role)
-RETURNS BOOLEAN
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.user_roles
-    WHERE user_id = _user_id
-      AND role = _role
-  )
-$$;
-
 
 -- =====================================================
 -- PART 3: TABLES (테이블 생성)
@@ -84,6 +68,22 @@ CREATE TABLE public.user_roles (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(user_id, role)
 );
+
+-- 역할 확인 함수 (RLS 정책에서 사용) - user_roles 테이블 생성 후 추가
+CREATE OR REPLACE FUNCTION public.has_role(_user_id UUID, _role app_role)
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.user_roles
+    WHERE user_id = _user_id
+      AND role = _role
+  )
+$$;
 
 -- 3. 주문 테이블
 CREATE TABLE public.orders (
