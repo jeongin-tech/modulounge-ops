@@ -63,6 +63,7 @@ const OrdersAll = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
@@ -287,6 +288,30 @@ const OrdersAll = () => {
     }
   };
 
+  const handleBulkDelete = async () => {
+    try {
+      const selectedArray = Array.from(selectedOrders);
+      
+      for (const orderId of selectedArray) {
+        const { error } = await supabase
+          .from("orders")
+          .delete()
+          .eq("id", orderId);
+
+        if (error) throw error;
+      }
+
+      toast.success(`${selectedArray.length}건의 오더가 삭제되었습니다.`);
+      setShowDeleteDialog(false);
+      setSelectedOrders(new Set());
+      
+      setLoading(true);
+      await fetchOrders();
+    } catch (error) {
+      toast.error("오더 삭제에 실패했습니다.");
+    }
+  };
+
   const isAllSelected = paginatedOrders.length > 0 && paginatedOrders.every((o) => selectedOrders.has(o.id));
 
   if (loading) {
@@ -405,14 +430,24 @@ const OrdersAll = () => {
                   </label>
                 </div>
                 {selectedOrders.size > 0 && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => setShowDeleteDialog(true)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    선택 취소 ({selectedOrders.size})
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowCancelDialog(true)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      선택 취소 ({selectedOrders.size})
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setShowDeleteDialog(true)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      선택 삭제 ({selectedOrders.size})
+                    </Button>
+                  </div>
                 )}
               </div>
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -579,7 +614,7 @@ const OrdersAll = () => {
           </>
         )}
 
-        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>선택한 오더를 취소하시겠습니까?</AlertDialogTitle>
@@ -588,9 +623,26 @@ const OrdersAll = () => {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>취소</AlertDialogCancel>
+              <AlertDialogCancel>닫기</AlertDialogCancel>
               <AlertDialogAction onClick={handleBulkCancel} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                 확인
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>선택한 오더를 완전히 삭제하시겠습니까?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {selectedOrders.size}건의 오더가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>닫기</AlertDialogCancel>
+              <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                삭제
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
