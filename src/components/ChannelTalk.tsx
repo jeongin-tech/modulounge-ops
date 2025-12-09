@@ -1,5 +1,10 @@
 import { useEffect } from 'react';
 
+interface ServiceRegion {
+  sido: string;
+  gugun: string;
+}
+
 interface ChannelTalkProfile {
   id: string;
   email: string;
@@ -9,7 +14,7 @@ interface ChannelTalkProfile {
   businessRegistrationNumber?: string;
   representativeName?: string;
   serviceType?: string;
-  serviceRegions?: string[];
+  serviceRegions?: ServiceRegion[] | string[];
 }
 
 interface ChannelTalkProps {
@@ -69,6 +74,22 @@ const ChannelTalk = ({ pluginKey, user }: ChannelTalkProps) => {
 
     if (user) {
       bootOption.memberId = user.id;
+      
+      // Format service regions properly
+      let formattedRegions: string | null = null;
+      if (user.serviceRegions && Array.isArray(user.serviceRegions)) {
+        if (user.serviceRegions.length > 0) {
+          const firstItem = user.serviceRegions[0];
+          if (typeof firstItem === 'string') {
+            formattedRegions = (user.serviceRegions as string[]).join(', ');
+          } else if (typeof firstItem === 'object' && 'sido' in firstItem) {
+            formattedRegions = (user.serviceRegions as ServiceRegion[])
+              .map(r => `${r.sido} ${r.gugun}`)
+              .join(', ');
+          }
+        }
+      }
+      
       bootOption.profile = {
         name: user.name || user.email,
         email: user.email,
@@ -78,7 +99,7 @@ const ChannelTalk = ({ pluginKey, user }: ChannelTalkProps) => {
         representativeName: user.representativeName || null,
         businessRegistrationNumber: user.businessRegistrationNumber || null,
         serviceType: user.serviceType || null,
-        serviceRegions: user.serviceRegions?.join(', ') || null,
+        serviceRegions: formattedRegions,
       };
     }
 
