@@ -197,6 +197,7 @@ const OrdersAll = () => {
           description: `주문번호: ${order.order_number}\n금액: ₩${order.amount?.toLocaleString()}\n제휴업체: ${order.partner_profile?.company_name || order.partner_profile?.full_name}`,
           created_by: user.id,
           color: "#3b82f6",
+          order_id: orderId,
         });
 
       if (calendarError) {
@@ -267,6 +268,12 @@ const OrdersAll = () => {
 
         if (error) throw error;
 
+        // 관련 캘린더 이벤트 삭제
+        await supabase
+          .from("calendar_events")
+          .delete()
+          .eq("order_id", orderId);
+
         await supabase.from("notifications").insert({
           user_id: order.partner_id,
           title: "오더가 철회되었습니다",
@@ -277,7 +284,7 @@ const OrdersAll = () => {
       }
 
       toast.success(`${selectedArray.length}건의 오더가 취소되었습니다.`);
-      setShowDeleteDialog(false);
+      setShowCancelDialog(false);
       setSelectedOrders(new Set());
       
       // 목록 새로고침

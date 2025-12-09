@@ -132,6 +132,7 @@ export type Database = {
           is_all_day: boolean
           location: string | null
           meeting_url: string | null
+          order_id: string | null
           recurrence_end_date: string | null
           recurrence_rule: string | null
           reminders: Json | null
@@ -153,6 +154,7 @@ export type Database = {
           is_all_day?: boolean
           location?: string | null
           meeting_url?: string | null
+          order_id?: string | null
           recurrence_end_date?: string | null
           recurrence_rule?: string | null
           reminders?: Json | null
@@ -174,6 +176,7 @@ export type Database = {
           is_all_day?: boolean
           location?: string | null
           meeting_url?: string | null
+          order_id?: string | null
           recurrence_end_date?: string | null
           recurrence_rule?: string | null
           reminders?: Json | null
@@ -188,6 +191,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
