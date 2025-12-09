@@ -22,6 +22,7 @@ import {
   Tag,
   User as UserIcon,
   ExternalLink,
+  Bug,
 } from "lucide-react";
 
 // 원화 아이콘 컴포넌트
@@ -272,6 +273,13 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
       icon: <UserIcon className="h-5 w-5" />,
       label: "프로필 관리",
       path: "/profile",
+      roles: ["PARTNER"],
+    },
+    // PARTNER 전용 - 오류 제보
+    {
+      icon: <Bug className="h-5 w-5" />,
+      label: "오류 제보",
+      path: "/bug-reports",
       roles: ["PARTNER"],
     },
     // STAFF 전용
