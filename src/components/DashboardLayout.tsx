@@ -63,7 +63,6 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
   } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -86,48 +85,28 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
   useEffect(() => {
     if (user) {
       const fetchUserProfile = async () => {
-        setIsLoading(true);
-        try {
-          const { data, error } = await supabase
-            .from("profiles")
-            .select("role, full_name, phone, company_name, business_registration_number, representative_name, service_type, service_regions")
-            .eq("id", user.id)
-            .single();
-          
-          if (error) {
-            console.error("Error fetching profile:", error);
-            toast.error("프로필을 불러오는데 실패했습니다. 다시 로그인해주세요.");
-            await supabase.auth.signOut();
-            navigate("/auth");
-            return;
-          }
-          
-          if (data) {
-            setUserRole(data.role as "STAFF" | "PARTNER");
-            setUserProfile({
-              full_name: data.full_name || undefined,
-              phone: data.phone || undefined,
-              company_name: data.company_name || undefined,
-              business_registration_number: data.business_registration_number || undefined,
-              representative_name: data.representative_name || undefined,
-              service_type: data.service_type || undefined,
-              service_regions: data.service_regions as string[] || undefined,
-            });
-          }
-        } catch (err) {
-          console.error("Unexpected error:", err);
-          toast.error("예기치 않은 오류가 발생했습니다.");
-          await supabase.auth.signOut();
-          navigate("/auth");
-        } finally {
-          setIsLoading(false);
+        const { data } = await supabase
+          .from("profiles")
+          .select("role, full_name, phone, company_name, business_registration_number, representative_name, service_type, service_regions")
+          .eq("id", user.id)
+          .single();
+        
+        if (data) {
+          setUserRole(data.role as "STAFF" | "PARTNER");
+          setUserProfile({
+            full_name: data.full_name || undefined,
+            phone: data.phone || undefined,
+            company_name: data.company_name || undefined,
+            business_registration_number: data.business_registration_number || undefined,
+            representative_name: data.representative_name || undefined,
+            service_type: data.service_type || undefined,
+            service_regions: data.service_regions as string[] || undefined,
+          });
         }
       };
       fetchUserProfile();
-    } else {
-      setIsLoading(false);
     }
-  }, [user, navigate]);
+  }, [user]);
 
   // 대기중인 오더 수 가져오기
   useEffect(() => {
@@ -302,17 +281,6 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
   const filteredMenuItems = menuItems.filter((item) =>
     userRole ? item.roles.includes(userRole) : false
   );
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <p className="text-muted-foreground">로딩 중...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">

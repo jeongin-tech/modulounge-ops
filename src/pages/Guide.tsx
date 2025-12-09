@@ -96,10 +96,6 @@ const Guide = () => {
                   <p>• 사용자 관리 - 사용자 등록/수정/삭제</p>
                   <p>• 시스템 설정 - 시스템 환경 설정</p>
                 </div>
-                <div className="space-y-2">
-                  <p className="font-semibold text-primary">🔗 외부 연동</p>
-                  <p>• 아임웹 로그인 - 아임웹 관리자 빠른 접속</p>
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -461,35 +457,6 @@ const Guide = () => {
                         <li><strong>서비스 지역</strong> - 담당 지역 설정</li>
                         <li><strong>서비스 유형</strong> - 제공 서비스 종류</li>
                       </ul>
-                    </div>
-                </AccordionContent>
-              </AccordionItem>
-              )}
-
-              {!isPartner && (
-                <AccordionItem value="imweb-login">
-                  <AccordionTrigger className="text-left">
-                    🔗 아임웹 로그인
-                  </AccordionTrigger>
-                  <AccordionContent className="space-y-3 text-sm">
-                    <p>아임웹 관리자 페이지에 빠르게 로그인합니다.</p>
-                    <div className="space-y-2">
-                      <h4 className="font-semibold">사용 방법</h4>
-                      <ol className="list-decimal list-inside space-y-1">
-                        <li>좌측 메뉴에서 "아임웹 로그인" 클릭</li>
-                        <li>페이지 접속 시 아임웹 로그인 페이지로 자동 이동</li>
-                        <li>저장된 계정 정보로 자동 로그인 진행</li>
-                      </ol>
-                    </div>
-                    <div className="bg-primary/10 p-3 rounded-lg">
-                      <p className="text-sm">
-                        💡 아임웹 관리자 페이지에서 예약, 상품, 고객 관리 등을 수행할 수 있습니다.
-                      </p>
-                    </div>
-                    <div className="bg-yellow-50 dark:bg-yellow-950/20 p-3 rounded-lg">
-                      <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                        ⚠️ 로그인 정보가 변경된 경우 담당자에게 문의해주세요.
-                      </p>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
