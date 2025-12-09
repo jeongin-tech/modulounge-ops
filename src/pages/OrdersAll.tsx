@@ -259,10 +259,12 @@ const OrdersAll = () => {
         const order = orders.find((o) => o.id === orderId);
         if (!order) continue;
 
-        await supabase
+        const { error } = await supabase
           .from("orders")
           .update({ status: "cancelled" })
           .eq("id", orderId);
+
+        if (error) throw error;
 
         await supabase.from("notifications").insert({
           user_id: order.partner_id,
@@ -274,9 +276,12 @@ const OrdersAll = () => {
       }
 
       toast.success(`${selectedArray.length}건의 오더가 취소되었습니다.`);
-      setSelectedOrders(new Set());
       setShowDeleteDialog(false);
-      fetchOrders();
+      setSelectedOrders(new Set());
+      
+      // 목록 새로고침
+      setLoading(true);
+      await fetchOrders();
     } catch (error) {
       toast.error("오더 취소에 실패했습니다.");
     }
