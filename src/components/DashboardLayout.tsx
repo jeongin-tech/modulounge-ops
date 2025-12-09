@@ -52,6 +52,7 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<"STAFF" | "PARTNER" | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [userProfile, setUserProfile] = useState<{
     full_name?: string;
     phone?: string;
@@ -85,6 +86,7 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
   useEffect(() => {
     if (user) {
       const fetchUserProfile = async () => {
+        setIsLoadingProfile(true);
         const { data } = await supabase
           .from("profiles")
           .select("role, full_name, phone, company_name, business_registration_number, representative_name, service_type, service_regions")
@@ -103,8 +105,11 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
             service_regions: data.service_regions as string[] || undefined,
           });
         }
+        setIsLoadingProfile(false);
       };
       fetchUserProfile();
+    } else {
+      setIsLoadingProfile(false);
     }
   }, [user]);
 
@@ -281,6 +286,17 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
   const filteredMenuItems = menuItems.filter((item) =>
     userRole ? item.roles.includes(userRole) : false
   );
+
+  if (isLoadingProfile) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">로딩중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
