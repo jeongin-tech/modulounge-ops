@@ -294,7 +294,7 @@ const Partners = () => {
                             {partner.service_type}
                           </Badge>
                         )}
-                        {partner.service_regions && partner.service_regions.length > 0 && (
+                        {partner.service_regions && Array.isArray(partner.service_regions) && partner.service_regions.length > 0 && (
                           <p className="text-xs">
                             {partner.service_regions.map(r => `${r.sido} ${r.gugun}`).join(", ")}
                           </p>
