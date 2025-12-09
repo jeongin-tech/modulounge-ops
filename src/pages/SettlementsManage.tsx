@@ -399,6 +399,7 @@ const SettlementsManage = () => {
                                 type="date"
                                 value={paymentDate}
                                 onChange={(e) => setPaymentDate(e.target.value)}
+                                min={new Date().toISOString().slice(0, 10)}
                               />
                             </div>
                             <div className="flex gap-3">
