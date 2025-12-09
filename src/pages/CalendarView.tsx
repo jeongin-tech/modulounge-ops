@@ -4,8 +4,6 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { EventDialog } from "@/components/EventDialog";
@@ -65,36 +63,27 @@ const CalendarView = () => {
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
   const [dayEventsDialogOpen, setDayEventsDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [eventTypes, setEventTypes] = useState<string[]>(["공간대관"]);
-  const [selectedEventTypes, setSelectedEventTypes] = useState<Set<string>>(new Set(["공간대관"]));
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchEventTypes();
+    fetchUserRole();
     fetchEvents();
   }, []);
 
-  const fetchEventTypes = async () => {
-    // 기본 정의된 타입들
-    const predefinedTypes = Object.keys(eventTypeColors);
-    
-    // profiles에서 service_type 가져오기
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("service_type")
-      .not("service_type", "is", null);
-    
-    // calendar_events에서 실제 event_type 가져오기
-    const { data: eventData } = await supabase
-      .from("calendar_events")
-      .select("event_type");
-    
-    const profileTypes = profileData?.map(p => p.service_type).filter(Boolean) || [];
-    const eventTypesFromDb = eventData?.map(e => e.event_type).filter(Boolean) || [];
-    
-    // 기본 타입 + DB의 타입들 병합 (중복 제거)
-    const allTypes = [...new Set([...predefinedTypes, ...profileTypes, ...eventTypesFromDb])];
-    setEventTypes(allTypes as string[]);
-    setSelectedEventTypes(new Set(allTypes as string[]));
+  const fetchUserRole = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setCurrentUserId(user.id);
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+      if (profile) {
+        setUserRole(profile.role);
+      }
+    }
   };
 
   const fetchEvents = async () => {
@@ -121,23 +110,17 @@ const CalendarView = () => {
   const getEventsForDate = (date: Date) => {
     return events.filter((event) => {
       const eventDate = new Date(event.start_time);
-      return (
+      const matchesDate = 
         eventDate.getFullYear() === date.getFullYear() &&
         eventDate.getMonth() === date.getMonth() &&
-        eventDate.getDate() === date.getDate() &&
-        selectedEventTypes.has(event.event_type)
-      );
+        eventDate.getDate() === date.getDate();
+      
+      // PARTNER는 본인 일정만 표시
+      if (userRole === "PARTNER" && currentUserId) {
+        return matchesDate && event.created_by === currentUserId;
+      }
+      return matchesDate;
     });
-  };
-
-  const toggleEventType = (type: string) => {
-    const newSelected = new Set(selectedEventTypes);
-    if (newSelected.has(type)) {
-      newSelected.delete(type);
-    } else {
-      newSelected.add(type);
-    }
-    setSelectedEventTypes(newSelected);
   };
 
   const selectedDateEvents = selectedDate ? getEventsForDate(selectedDate) : [];
@@ -193,32 +176,24 @@ const CalendarView = () => {
           </Button>
         </div>
 
-        <div className="grid lg:grid-cols-[250px_1fr_300px] gap-6">
-          {/* Event Type Filter Sidebar */}
-          <div className="bg-card rounded-lg border p-6">
-            <h3 className="font-semibold mb-4 text-lg">일정 종류</h3>
-            <div className="space-y-2">
-              {eventTypes.map((type) => (
-                <div key={type} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`type-${type}`}
-                    checked={selectedEventTypes.has(type)}
-                    onCheckedChange={() => toggleEventType(type)}
-                  />
-                  <div 
-                    className="w-3 h-3 rounded-full shrink-0"
-                    style={{ backgroundColor: getEventTypeColor(type) }}
-                  />
-                  <Label 
-                    htmlFor={`type-${type}`} 
-                    className="cursor-pointer text-sm"
-                  >
-                    {type}
-                  </Label>
-                </div>
-              ))}
+        <div className={`grid ${userRole === "PARTNER" ? "lg:grid-cols-[1fr_300px]" : "lg:grid-cols-[250px_1fr_300px]"} gap-6`}>
+          {/* Event Type Filter Sidebar - STAFF만 표시 */}
+          {userRole !== "PARTNER" && (
+            <div className="bg-card rounded-lg border p-6">
+              <h3 className="font-semibold mb-4 text-lg">일정 종류</h3>
+              <div className="space-y-2">
+                {events.map(e => e.event_type).filter((v, i, a) => a.indexOf(v) === i).map((type) => (
+                  <div key={type} className="flex items-center space-x-2">
+                    <div 
+                      className="w-3 h-3 rounded-full shrink-0"
+                      style={{ backgroundColor: getEventTypeColor(type) }}
+                    />
+                    <span className="text-sm">{type}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Main Calendar */}
           <div className="bg-card rounded-lg border p-6">
