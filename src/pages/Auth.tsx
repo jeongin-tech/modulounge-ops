@@ -102,7 +102,7 @@ const Auth = () => {
               phone,
               role,
               service_type: serviceType || null,
-              service_regions: JSON.stringify(selectedRegions),
+              service_regions: selectedRegions,
               business_registration_number: businessNumber || null,
               representative_name: representativeName || null,
             },
