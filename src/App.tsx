@@ -28,6 +28,7 @@ import Guide from "./pages/Guide";
 import ProfileSettings from "./pages/ProfileSettings";
 import TestPage from "./pages/TestPage";
 import ImwebLogin from "./pages/ImwebLogin";
+import BugReports from "./pages/BugReports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -64,6 +65,7 @@ const App = () => (
           <Route path="/profile" element={<ProfileSettings />} />
           <Route path="/test" element={<TestPage />} />
           <Route path="/imweb" element={<ImwebLogin />} />
+          <Route path="/bug-reports" element={<BugReports />} />
           <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
