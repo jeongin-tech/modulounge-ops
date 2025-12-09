@@ -198,6 +198,7 @@ const OrdersRequest = () => {
                     type="datetime-local"
                     value={serviceDate}
                     onChange={(e) => setServiceDate(e.target.value)}
+                    min={new Date().toISOString().slice(0, 16)}
                     required
                   />
                 </div>

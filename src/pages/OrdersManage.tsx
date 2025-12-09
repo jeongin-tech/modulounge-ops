@@ -454,6 +454,7 @@ const OrdersManage = () => {
                               type="datetime-local"
                               value={completedDate}
                               onChange={(e) => setCompletedDate(e.target.value)}
+                              min={new Date().toISOString().slice(0, 16)}
                             />
                           </div>
 
