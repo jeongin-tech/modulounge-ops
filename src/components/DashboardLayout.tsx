@@ -87,37 +87,47 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
     if (user) {
       const fetchUserProfile = async () => {
         setIsLoading(true);
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("role, full_name, phone, company_name, business_registration_number, representative_name, service_type, service_regions")
-          .eq("id", user.id)
-          .single();
-        
-        if (error) {
-          console.error("Error fetching profile:", error);
+        try {
+          const { data, error } = await supabase
+            .from("profiles")
+            .select("role, full_name, phone, company_name, business_registration_number, representative_name, service_type, service_regions")
+            .eq("id", user.id)
+            .single();
+          
+          if (error) {
+            console.error("Error fetching profile:", error);
+            toast.error("프로필을 불러오는데 실패했습니다. 다시 로그인해주세요.");
+            await supabase.auth.signOut();
+            navigate("/auth");
+            return;
+          }
+          
+          if (data) {
+            setUserRole(data.role as "STAFF" | "PARTNER");
+            setUserProfile({
+              full_name: data.full_name || undefined,
+              phone: data.phone || undefined,
+              company_name: data.company_name || undefined,
+              business_registration_number: data.business_registration_number || undefined,
+              representative_name: data.representative_name || undefined,
+              service_type: data.service_type || undefined,
+              service_regions: data.service_regions as string[] || undefined,
+            });
+          }
+        } catch (err) {
+          console.error("Unexpected error:", err);
+          toast.error("예기치 않은 오류가 발생했습니다.");
+          await supabase.auth.signOut();
+          navigate("/auth");
+        } finally {
           setIsLoading(false);
-          return;
         }
-        
-        if (data) {
-          setUserRole(data.role as "STAFF" | "PARTNER");
-          setUserProfile({
-            full_name: data.full_name || undefined,
-            phone: data.phone || undefined,
-            company_name: data.company_name || undefined,
-            business_registration_number: data.business_registration_number || undefined,
-            representative_name: data.representative_name || undefined,
-            service_type: data.service_type || undefined,
-            service_regions: data.service_regions as string[] || undefined,
-          });
-        }
-        setIsLoading(false);
       };
       fetchUserProfile();
     } else {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, navigate]);
 
   // 대기중인 오더 수 가져오기
   useEffect(() => {
