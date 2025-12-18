@@ -139,10 +139,9 @@ const ContractCreate = () => {
     }
   };
 
-  const handlePricingItemChange = (index: number, value: number) => {
-    const validValue = isNaN(value) ? 0 : value;
+  const handlePricingItemChange = (index: number, field: keyof PricingItem, value: string | number) => {
     const newItems = pricingItems.map((item, i) =>
-      i === index ? { ...item, value: validValue } : item
+      i === index ? { ...item, [field]: value } : item
     );
     setPricingItems(newItems);
     calculateTotal(newItems);
@@ -350,43 +349,57 @@ const ContractCreate = () => {
               <CardTitle>이용 요금</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
                 {pricingItems.map((item, index) => (
-                  <div key={index} className="space-y-2">
-                    <Label htmlFor={`pricing-${index}`}>
-                      {item.label} {item.type === "percent" && "(비율)"}
-                    </Label>
-                    <Input
-                      id={`pricing-${index}`}
-                      type="number"
-                      step={item.type === "percent" ? "0.01" : "1"}
-                      value={item.value}
-                      onChange={(e) =>
-                        handlePricingItemChange(index, parseFloat(e.target.value))
-                      }
-                      placeholder={item.type === "percent" ? "0.1 = 10%" : "금액"}
-                    />
+                  <div key={index} className="flex gap-2 items-center p-3 border rounded-lg bg-muted/30">
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <Input
+                        value={item.label}
+                        onChange={(e) => handlePricingItemChange(index, "label", e.target.value)}
+                        placeholder="항목명"
+                      />
+                      <div className="flex gap-2">
+                        <Input
+                          type="number"
+                          step={item.type === "percent" ? "0.01" : "1"}
+                          value={item.value}
+                          onChange={(e) =>
+                            handlePricingItemChange(index, "value", parseFloat(e.target.value) || 0)
+                          }
+                          placeholder={item.type === "percent" ? "0.1 = 10%" : "금액"}
+                          className="flex-1"
+                        />
+                        <select
+                          value={item.type}
+                          onChange={(e) => handlePricingItemChange(index, "type", e.target.value)}
+                          className="px-3 py-2 border rounded-md bg-background text-sm"
+                        >
+                          <option value="number">숫자</option>
+                          <option value="percent">%</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
                 ))}
+              </div>
 
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="total_amount" className="text-lg font-bold">
-                    총 입금 금액
-                  </Label>
-                  <Input
-                    id="total_amount"
-                    type="number"
-                    value={formData.total_amount}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        total_amount: parseInt(e.target.value) || 0,
-                      })
-                    }
-                    className="text-lg font-bold"
-                    required
-                  />
-                </div>
+              <div className="space-y-2 pt-4 border-t">
+                <Label htmlFor="total_amount" className="text-lg font-bold">
+                  총 입금 금액
+                </Label>
+                <Input
+                  id="total_amount"
+                  type="number"
+                  value={formData.total_amount}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      total_amount: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  className="text-lg font-bold"
+                  required
+                />
               </div>
             </CardContent>
           </Card>
