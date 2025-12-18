@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 
 interface PricingItem {
   label: string;
@@ -143,6 +143,20 @@ const ContractCreate = () => {
     const newItems = pricingItems.map((item, i) =>
       i === index ? { ...item, [field]: value } : item
     );
+    setPricingItems(newItems);
+    calculateTotal(newItems);
+  };
+
+  const addPricingItem = () => {
+    const newItems = [
+      ...pricingItems,
+      { label: "", value: 0, type: "number" as const },
+    ];
+    setPricingItems(newItems);
+  };
+
+  const removePricingItem = (index: number) => {
+    const newItems = pricingItems.filter((_, i) => i !== index);
     setPricingItems(newItems);
     calculateTotal(newItems);
   };
@@ -379,9 +393,28 @@ const ContractCreate = () => {
                         </select>
                       </div>
                     </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removePricingItem(index)}
+                      className="shrink-0"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
                   </div>
                 ))}
               </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addPricingItem}
+                className="w-full"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                항목 추가
+              </Button>
 
               <div className="space-y-2 pt-4 border-t">
                 <Label htmlFor="total_amount" className="text-lg font-bold">
