@@ -54,6 +54,10 @@ const ContractResponse = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   
+  // Template fallback state
+  const [templateTermsContent, setTemplateTermsContent] = useState<string | null>(null);
+  const [templateRefundPolicy, setTemplateRefundPolicy] = useState<string | null>(null);
+  
   // Form state
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [customerName, setCustomerName] = useState("");
@@ -110,13 +114,19 @@ const ContractResponse = () => {
           setPersonalPhone(data.personal_phone || "");
           setPersonalIdNumber(data.personal_id_number || "");
 
-          // 템플릿에서 요금 항목 가져오기
+          // 템플릿에서 요금 항목 및 유의사항 가져오기
           if (data.template_id) {
             const { data: templateData } = await supabase
               .from("contract_templates")
-              .select("pricing_items")
+              .select("pricing_items, terms_content, refund_policy")
               .eq("id", data.template_id)
               .maybeSingle();
+
+            // 템플릿의 terms_content와 refund_policy를 fallback으로 저장
+            if (templateData) {
+              setTemplateTermsContent(templateData.terms_content || null);
+              setTemplateRefundPolicy(templateData.refund_policy || null);
+            }
 
             if (templateData?.pricing_items && Array.isArray(templateData.pricing_items)) {
               const items = templateData.pricing_items as any[];
@@ -295,20 +305,20 @@ const ContractResponse = () => {
           </p>
         </div>
 
-        {contract.terms_content && (
+        {(contract.terms_content || templateTermsContent) && (
           <div style={{ marginBottom: '30px' }}>
             <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>■ 이용 유의사항</h2>
             <div style={{ fontSize: '15px', color: '#333', lineHeight: '1.8', whiteSpace: 'pre-wrap' }}>
-              {contract.terms_content}
+              {contract.terms_content || templateTermsContent}
             </div>
           </div>
         )}
 
-        {contract.refund_policy && (
+        {(contract.refund_policy || templateRefundPolicy) && (
           <div style={{ marginBottom: '30px' }}>
             <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>■ 환불 규정</h2>
             <div style={{ fontSize: '15px', color: '#333', lineHeight: '1.8', whiteSpace: 'pre-wrap' }}>
-              {contract.refund_policy}
+              {contract.refund_policy || templateRefundPolicy}
             </div>
           </div>
         )}
