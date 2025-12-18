@@ -43,6 +43,8 @@ interface Contract {
   personal_phone: string | null;
   personal_id_number: string | null;
   template_id: string | null;
+  terms_content: string | null;
+  refund_policy: string | null;
 }
 
 const ContractResponse = () => {
@@ -293,42 +295,23 @@ const ContractResponse = () => {
           </p>
         </div>
 
-        <div style={{ marginBottom: '30px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>■ 이용 유의사항</h2>
-          <div style={{ fontSize: '15px', color: '#333', lineHeight: '1.8' }}>
-            <p style={{ marginBottom: '8px' }}>• 벽면에 테이프·접착제 부착 금지 (자국 발생 시 청소비 10만 원 이상 부과)</p>
-            <p style={{ marginBottom: '8px' }}>• 토사물 발생 시 청소비 10만 원 부과</p>
-            <p style={{ marginBottom: '8px' }}>• 전 구역 흡연 금지(전자담배 포함) — 위반 시 CCTV 확인 후 청소비 10만 원 이상 부과</p>
-            <p style={{ marginBottom: '8px' }}>• 내부 기물 및 인테리어 소품 파손 시 수리비 또는 교체비 전액 청구</p>
-            <p style={{ marginBottom: '8px' }}>• 기본 음향 서비스 제공</p>
-            <p style={{ marginBottom: '8px' }}>• 기기 보호를 위해 음향 설정은 기본값으로 고정</p>
-            <p style={{ marginBottom: '8px' }}>• 중요 행사 시 음향 렌탈 옵션 권장</p>
-            <p style={{ marginBottom: '8px' }}>• 미성년자는 오후 7시 이후 대관 불가</p>
-            <p style={{ marginBottom: '8px' }}>• 예약은 결제 완료 순으로 확정</p>
-            <p style={{ marginBottom: '8px' }}>• 이용 후 남은 물품은 모두 폐기</p>
-            <p style={{ marginBottom: '8px' }}>• 시간 추가(7만 원)는 종료 3시간 전까지 요청</p>
-            <p style={{ marginBottom: '8px' }}>• 올나잇 타임은 오후 10시까지 예약 가능</p>
-            <p style={{ marginBottom: '8px' }}>• 입·퇴실 시 CCTV 확인</p>
-            <p style={{ marginBottom: '8px' }}>• 계약 인원 초과 시 즉시 추가요금 및 패널티 부과</p>
-            <p style={{ marginBottom: '8px' }}>• 전 타임 예약이 있을 경우 사전 입실 불가</p>
+        {contract.terms_content && (
+          <div style={{ marginBottom: '30px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>■ 이용 유의사항</h2>
+            <div style={{ fontSize: '15px', color: '#333', lineHeight: '1.8', whiteSpace: 'pre-wrap' }}>
+              {contract.terms_content}
+            </div>
           </div>
-        </div>
+        )}
 
-        <div style={{ marginBottom: '30px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>■ 환불 규정</h2>
-          <div style={{ fontSize: '15px', color: '#333', lineHeight: '1.8' }}>
-            <p style={{ marginBottom: '8px' }}>• 인원 확정 후 인원 조정으로 인한 차액 환불 불가</p>
-            <p style={{ marginBottom: '8px' }}>• 개인 사유(취소·변경 포함)도 동일 규정 적용</p>
-            <p style={{ marginTop: '15px', marginBottom: '10px', fontWeight: 'bold' }}>환불 기준</p>
-            <p style={{ marginBottom: '8px' }}>• 결제 완료 ~ 이용일 8일 전: 총 금액의 20% 공제 후 80% 환불</p>
-            <p style={{ marginBottom: '8px' }}>• 이용일 7일 전 ~ 당일: 환불 불가</p>
-            <p style={{ marginTop: '15px', marginBottom: '10px', fontWeight: 'bold' }}>날짜/지점 변경 규정</p>
-            <p style={{ marginBottom: '8px' }}>• 이용일 8일 전까지 변경 가능</p>
-            <p style={{ marginBottom: '8px' }}>• 총 금액의 20% 추가 납부 시 이월 가능</p>
-            <p style={{ marginBottom: '8px' }}>• 지점 변경은 해당 일자에 타 지점 예약이 없을 경우만 가능</p>
-            <p style={{ marginTop: '15px', fontSize: '14px', color: '#666' }}>※ 위 규정은 옵션 및 부가세 포함 전체 금액에 적용됩니다.</p>
+        {contract.refund_policy && (
+          <div style={{ marginBottom: '30px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>■ 환불 규정</h2>
+            <div style={{ fontSize: '15px', color: '#333', lineHeight: '1.8', whiteSpace: 'pre-wrap' }}>
+              {contract.refund_policy}
+            </div>
           </div>
-        </div>
+        )}
 
         <div style={{ marginBottom: '30px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>■ 예약 정보</h2>

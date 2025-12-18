@@ -27,6 +27,8 @@ interface Template {
   id: string;
   name: string;
   pricing_items: PricingItem[];
+  terms_content: string;
+  refund_policy: string;
 }
 
 const DEFAULT_PRICING_ITEMS: PricingItem[] = [
@@ -43,6 +45,8 @@ const ContractCreate = () => {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [pricingItems, setPricingItems] = useState<PricingItem[]>(DEFAULT_PRICING_ITEMS);
+  const [termsContent, setTermsContent] = useState<string>("");
+  const [refundPolicy, setRefundPolicy] = useState<string>("");
   const [formData, setFormData] = useState({
     location: "",
     reservation_date: "",
@@ -95,6 +99,8 @@ const ContractCreate = () => {
           id: t.id,
           name: t.name,
           pricing_items: pricingItems,
+          terms_content: t.terms_content || "",
+          refund_policy: t.refund_policy || "",
         };
       });
       
@@ -107,6 +113,10 @@ const ContractCreate = () => {
   const applyTemplate = (template: Template) => {
     // 템플릿의 요금 항목을 적용
     setPricingItems(template.pricing_items);
+    
+    // 유의사항 및 환불정책 적용
+    setTermsContent(template.terms_content);
+    setRefundPolicy(template.refund_policy);
     
     // 총액 계산 (% 타입은 다른 금액들의 합에 대한 비율로 계산)
     calculateTotal(template.pricing_items);
@@ -193,6 +203,8 @@ const ContractCreate = () => {
             total_amount: formData.total_amount,
             template_id: selectedTemplate || null,
             created_by: user.id,
+            terms_content: termsContent,
+            refund_policy: refundPolicy,
           },
         ])
         .select()
@@ -432,6 +444,36 @@ const ContractCreate = () => {
                   }
                   className="text-lg font-bold"
                   required
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>이용 유의사항</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="terms_content">유의사항</Label>
+                <Textarea
+                  id="terms_content"
+                  value={termsContent}
+                  onChange={(e) => setTermsContent(e.target.value)}
+                  placeholder="템플릿을 선택하면 자동으로 채워집니다"
+                  rows={10}
+                  className="font-mono text-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="refund_policy">환불 정책</Label>
+                <Textarea
+                  id="refund_policy"
+                  value={refundPolicy}
+                  onChange={(e) => setRefundPolicy(e.target.value)}
+                  placeholder="템플릿을 선택하면 자동으로 채워집니다"
+                  rows={6}
+                  className="font-mono text-sm"
                 />
               </div>
             </CardContent>

@@ -299,11 +299,13 @@ export type Database = {
           purpose: string | null
           receipt_email: string | null
           receipt_type: string | null
+          refund_policy: string | null
           reservation_date: string
           signature_data: string | null
           submitted_at: string | null
           tax_invoice_requested: boolean | null
           template_id: string | null
+          terms_content: string | null
           total_amount: number
           updated_at: string
           vat: number
@@ -337,11 +339,13 @@ export type Database = {
           purpose?: string | null
           receipt_email?: string | null
           receipt_type?: string | null
+          refund_policy?: string | null
           reservation_date: string
           signature_data?: string | null
           submitted_at?: string | null
           tax_invoice_requested?: boolean | null
           template_id?: string | null
+          terms_content?: string | null
           total_amount?: number
           updated_at?: string
           vat?: number
@@ -375,11 +379,13 @@ export type Database = {
           purpose?: string | null
           receipt_email?: string | null
           receipt_type?: string | null
+          refund_policy?: string | null
           reservation_date?: string
           signature_data?: string | null
           submitted_at?: string | null
           tax_invoice_requested?: boolean | null
           template_id?: string | null
+          terms_content?: string | null
           total_amount?: number
           updated_at?: string
           vat?: number
