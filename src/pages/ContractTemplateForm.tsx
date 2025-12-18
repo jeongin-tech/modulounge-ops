@@ -12,8 +12,17 @@ import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 
 interface PricingItem {
   label: string;
-  field: string;
+  value: number;
+  type: "number" | "percent";
 }
+
+const DEFAULT_PRICING_ITEMS: PricingItem[] = [
+  { label: "기본 이용료", value: 0, type: "number" },
+  { label: "기본 인원", value: 0, type: "number" },
+  { label: "인당 추가 요금", value: 0, type: "number" },
+  { label: "청소대행비", value: 0, type: "number" },
+  { label: "부가세율", value: 0, type: "percent" },
+];
 
 const ContractTemplateForm = () => {
   const navigate = useNavigate();
@@ -23,26 +32,8 @@ const ContractTemplateForm = () => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    base_price: 0,
-    base_guest_count: 0,
-    additional_price_per_person: 0,
-    cleaning_fee: 0,
-    vat_rate: 0,
     image_urls: [] as string[],
-    // 요금 설정 필드 라벨 (수정 가능)
-    field_labels: {
-      base_price: "기본 이용료",
-      base_guest_count: "기본 인원",
-      additional_price_per_person: "인당 추가 요금",
-      cleaning_fee: "청소대행비",
-      vat_rate: "부가세율",
-    },
-    pricing_items: [
-      { label: "", field: "base_price" },
-      { label: "", field: "additional_price" },
-      { label: "", field: "cleaning_fee" },
-      { label: "", field: "vat" },
-    ] as PricingItem[],
+    pricing_items: DEFAULT_PRICING_ITEMS,
     terms_content: `■ 이용 유의사항
 
 • 벽면에 테이프·접착제 부착 금지 (자국 발생 시 청소비 10만 원 이상 부과)
@@ -92,31 +83,33 @@ const ContractTemplateForm = () => {
         .single();
 
       if (error) throw error;
+
+      // 기존 데이터 마이그레이션: 구 형식을 새 형식으로 변환
+      let pricingItems: PricingItem[] = DEFAULT_PRICING_ITEMS;
       
-      const defaultFieldLabels = {
-        base_price: "기본 이용료",
-        base_guest_count: "기본 인원",
-        additional_price_per_person: "인당 추가 요금",
-        cleaning_fee: "청소대행비",
-        vat_rate: "부가세율",
-      };
-      
+      if (Array.isArray(data.pricing_items)) {
+        const existingItems = data.pricing_items as any[];
+        // 새 형식인지 확인 (value 속성이 있는지)
+        if (existingItems.length > 0 && 'value' in existingItems[0]) {
+          pricingItems = existingItems as PricingItem[];
+        } else {
+          // 구 형식: field_labels와 기존 필드값을 사용하여 변환
+          const fieldLabels = (data as any).field_labels || {};
+          pricingItems = [
+            { label: fieldLabels.base_price || "기본 이용료", value: data.base_price || 0, type: "number" },
+            { label: fieldLabels.base_guest_count || "기본 인원", value: data.base_guest_count || 0, type: "number" },
+            { label: fieldLabels.additional_price_per_person || "인당 추가 요금", value: data.additional_price_per_person || 0, type: "number" },
+            { label: fieldLabels.cleaning_fee || "청소대행비", value: data.cleaning_fee || 0, type: "number" },
+            { label: fieldLabels.vat_rate || "부가세율", value: data.vat_rate || 0, type: "percent" },
+          ];
+        }
+      }
+
       setFormData({
         name: data.name,
         description: data.description || "",
-        base_price: data.base_price,
-        base_guest_count: data.base_guest_count,
-        additional_price_per_person: data.additional_price_per_person,
-        cleaning_fee: data.cleaning_fee,
-        vat_rate: data.vat_rate,
         image_urls: Array.isArray(data.image_urls) ? (data.image_urls as unknown as string[]) : [],
-        field_labels: (data as any).field_labels || defaultFieldLabels,
-        pricing_items: Array.isArray(data.pricing_items) ? (data.pricing_items as unknown as PricingItem[]) : [
-          { label: "기본 이용료 (10인 기준)", field: "base_price" },
-          { label: "인원 추가", field: "additional_price" },
-          { label: "청소대행", field: "cleaning_fee" },
-          { label: "부가세", field: "vat" },
-        ],
+        pricing_items: pricingItems,
         terms_content: data.terms_content,
         refund_policy: data.refund_policy,
       });
@@ -132,16 +125,16 @@ const ContractTemplateForm = () => {
       ...prev,
       pricing_items: [
         ...prev.pricing_items,
-        { label: "", field: `custom_${Date.now()}` },
+        { label: "", value: 0, type: "number" as const },
       ],
     }));
   };
 
-  const updatePricingItem = (index: number, label: string) => {
+  const updatePricingItem = (index: number, field: keyof PricingItem, value: string | number) => {
     setFormData((prev) => ({
       ...prev,
       pricing_items: prev.pricing_items.map((item, i) =>
-        i === index ? { ...item, label } : item
+        i === index ? { ...item, [field]: value } : item
       ),
     }));
   };
@@ -161,15 +154,32 @@ const ContractTemplateForm = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("로그인이 필요합니다.");
 
+      // 호환성을 위해 기존 필드도 함께 저장
+      const firstItem = formData.pricing_items[0];
+      const secondItem = formData.pricing_items[1];
+      const thirdItem = formData.pricing_items[2];
+      const fourthItem = formData.pricing_items[3];
+      const fifthItem = formData.pricing_items[4];
+
+      const saveData = {
+        name: formData.name,
+        description: formData.description,
+        image_urls: formData.image_urls as any,
+        pricing_items: formData.pricing_items as any,
+        terms_content: formData.terms_content,
+        refund_policy: formData.refund_policy,
+        // 기존 필드 호환성 유지
+        base_price: firstItem?.value || 0,
+        base_guest_count: secondItem?.value || 0,
+        additional_price_per_person: thirdItem?.value || 0,
+        cleaning_fee: fourthItem?.value || 0,
+        vat_rate: fifthItem?.value || 0,
+      };
+
       if (isEdit) {
         const { error } = await supabase
           .from("contract_templates")
-          .update({
-            ...formData,
-            image_urls: formData.image_urls as any,
-            pricing_items: formData.pricing_items as any,
-            field_labels: formData.field_labels as any,
-          })
+          .update(saveData)
           .eq("id", id);
 
         if (error) throw error;
@@ -177,15 +187,7 @@ const ContractTemplateForm = () => {
       } else {
         const { error } = await supabase
           .from("contract_templates")
-          .insert([
-            {
-              ...formData,
-              image_urls: formData.image_urls as any,
-              pricing_items: formData.pricing_items as any,
-              field_labels: formData.field_labels as any,
-              created_by: user.id,
-            },
-          ]);
+          .insert([{ ...saveData, created_by: user.id }]);
 
         if (error) throw error;
         toast.success("템플릿이 생성되었습니다.");
@@ -255,201 +257,65 @@ const ContractTemplateForm = () => {
           </Card>
 
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>요금 설정</CardTitle>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addPricingItem}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                항목 추가
+              </Button>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="flex gap-2 items-center">
-                    <Input
-                      value={formData.field_labels.base_price}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          field_labels: { ...formData.field_labels, base_price: e.target.value },
-                        })
-                      }
-                      placeholder="항목명 (예: 기본 이용료)"
-                      className="text-sm font-medium"
-                    />
-                    <span className="text-destructive">*</span>
-                  </div>
-                  <Input
-                    id="base_price"
-                    type="number"
-                    value={formData.base_price}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        base_price: parseInt(e.target.value),
-                      })
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex gap-2 items-center">
-                    <Input
-                      value={formData.field_labels.base_guest_count}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          field_labels: { ...formData.field_labels, base_guest_count: e.target.value },
-                        })
-                      }
-                      placeholder="항목명 (예: 기본 인원)"
-                      className="text-sm font-medium"
-                    />
-                    <span className="text-destructive">*</span>
-                  </div>
-                  <Input
-                    id="base_guest_count"
-                    type="number"
-                    value={formData.base_guest_count}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        base_guest_count: parseInt(e.target.value),
-                      })
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex gap-2 items-center">
-                    <Input
-                      value={formData.field_labels.additional_price_per_person}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          field_labels: { ...formData.field_labels, additional_price_per_person: e.target.value },
-                        })
-                      }
-                      placeholder="항목명 (예: 인당 추가 요금)"
-                      className="text-sm font-medium"
-                    />
-                    <span className="text-destructive">*</span>
-                  </div>
-                  <Input
-                    id="additional_price_per_person"
-                    type="number"
-                    value={formData.additional_price_per_person}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        additional_price_per_person: parseInt(e.target.value),
-                      })
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex gap-2 items-center">
-                    <Input
-                      value={formData.field_labels.cleaning_fee}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          field_labels: { ...formData.field_labels, cleaning_fee: e.target.value },
-                        })
-                      }
-                      placeholder="항목명 (예: 청소대행비)"
-                      className="text-sm font-medium"
-                    />
-                    <span className="text-destructive">*</span>
-                  </div>
-                  <Input
-                    id="cleaning_fee"
-                    type="number"
-                    value={formData.cleaning_fee}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        cleaning_fee: parseInt(e.target.value),
-                      })
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex gap-2 items-center">
-                    <Input
-                      value={formData.field_labels.vat_rate}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          field_labels: { ...formData.field_labels, vat_rate: e.target.value },
-                        })
-                      }
-                      placeholder="항목명 (예: 부가세율)"
-                      className="text-sm font-medium"
-                    />
-                    <span className="text-destructive">*</span>
-                  </div>
-                  <Input
-                    id="vat_rate"
-                    type="number"
-                    step="0.01"
-                    value={formData.vat_rate}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        vat_rate: parseFloat(e.target.value),
-                      })
-                    }
-                    placeholder="0.1 = 10%"
-                    required
-                  />
-                </div>
-              </div>
-
-              <p className="text-sm text-muted-foreground mt-2">
-                각 항목의 이름을 수정할 수 있습니다. 계약서 작성 시 이 이름으로 표시됩니다.
+              <p className="text-sm text-muted-foreground">
+                계약서에 표시될 요금 항목을 자유롭게 추가/수정/삭제할 수 있습니다.
               </p>
-
-              <div className="pt-4 border-t">
-                <div className="flex items-center justify-between mb-4">
-                  <Label className="text-base">요금 항목 라벨 (계약서에 표시될 이름)</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={addPricingItem}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    항목 추가
-                  </Button>
-                </div>
-                <div className="space-y-3">
-                  {formData.pricing_items.map((item, index) => (
-                    <div key={index} className="flex gap-2">
+              
+              <div className="space-y-3">
+                {formData.pricing_items.map((item, index) => (
+                  <div key={index} className="flex gap-2 items-center p-3 border rounded-lg bg-muted/30">
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-2">
                       <Input
                         value={item.label}
-                        onChange={(e) => updatePricingItem(index, e.target.value)}
-                        placeholder="예: 기본 이용료, 인원 추가"
+                        onChange={(e) => updatePricingItem(index, "label", e.target.value)}
+                        placeholder="항목명 (예: 기본 이용료)"
                         required
                       />
-                      {formData.pricing_items.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removePricingItem(index)}
+                      <div className="flex gap-2">
+                        <Input
+                          type="number"
+                          step={item.type === "percent" ? "0.01" : "1"}
+                          value={item.value}
+                          onChange={(e) => updatePricingItem(index, "value", parseFloat(e.target.value) || 0)}
+                          placeholder={item.type === "percent" ? "0.1 = 10%" : "금액"}
+                          className="flex-1"
+                        />
+                        <select
+                          value={item.type}
+                          onChange={(e) => updatePricingItem(index, "type", e.target.value)}
+                          className="px-3 py-2 border rounded-md bg-background text-sm"
                         >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
+                          <option value="number">숫자</option>
+                          <option value="percent">%</option>
+                        </select>
+                      </div>
                     </div>
-                  ))}
-                </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  계약서 작성 시 이 라벨로 표시됩니다
-                </p>
+                    {formData.pricing_items.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removePricingItem(index)}
+                        className="shrink-0"
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
