@@ -303,17 +303,15 @@ const ContractTemplateForm = () => {
                         </select>
                       </div>
                     </div>
-                    {formData.pricing_items.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removePricingItem(index)}
-                        className="shrink-0"
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    )}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removePricingItem(index)}
+                      className="shrink-0"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
                   </div>
                 ))}
               </div>
