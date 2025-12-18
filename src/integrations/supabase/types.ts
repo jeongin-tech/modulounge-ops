@@ -302,6 +302,7 @@ export type Database = {
           receipt_type: string | null
           refund_policy: string | null
           reservation_date: string
+          reservation_items: Json | null
           signature_data: string | null
           submitted_at: string | null
           tax_invoice_requested: boolean | null
@@ -343,6 +344,7 @@ export type Database = {
           receipt_type?: string | null
           refund_policy?: string | null
           reservation_date: string
+          reservation_items?: Json | null
           signature_data?: string | null
           submitted_at?: string | null
           tax_invoice_requested?: boolean | null
@@ -384,6 +386,7 @@ export type Database = {
           receipt_type?: string | null
           refund_policy?: string | null
           reservation_date?: string
+          reservation_items?: Json | null
           signature_data?: string | null
           submitted_at?: string | null
           tax_invoice_requested?: boolean | null

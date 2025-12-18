@@ -12,6 +12,12 @@ interface PricingItem {
   type: "number" | "percent";
 }
 
+interface ReservationItem {
+  label: string;
+  value: string;
+  type: "text" | "date" | "time" | "number" | "textarea";
+}
+
 interface Contract {
   location: string;
   reservation_date: string;
@@ -46,12 +52,14 @@ interface Contract {
   terms_content: string | null;
   refund_policy: string | null;
   pricing_items: unknown;
+  reservation_items: unknown;
 }
 
 const ContractResponse = () => {
   const { token } = useParams<{ token: string }>();
   const [contract, setContract] = useState<Contract | null>(null);
   const [pricingItems, setPricingItems] = useState<PricingItem[]>([]);
+  const [reservationItems, setReservationItems] = useState<ReservationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   
@@ -136,6 +144,34 @@ const ContractResponse = () => {
               { label: "인원 추가", value: data.additional_price || 0, type: "number" },
               { label: "청소대행", value: data.cleaning_fee || 0, type: "number" },
               { label: "부가세", value: data.vat || 0, type: "number" },
+            ]);
+          }
+
+          // 계약서에 저장된 reservation_items가 있으면 우선 사용
+          if (data.reservation_items && Array.isArray(data.reservation_items)) {
+            const items = data.reservation_items as any[];
+            if (items.length > 0 && 'label' in items[0]) {
+              setReservationItems(items as ReservationItem[]);
+            } else {
+              // 기존 계약서 데이터로 기본 항목 구성
+              setReservationItems([
+                { label: "예약서비스", value: data.location || "", type: "text" },
+                { label: "예약 날짜", value: data.reservation_date || "", type: "date" },
+                { label: "입실 시간", value: data.checkin_time || "", type: "time" },
+                { label: "퇴실 시간", value: data.checkout_time || "", type: "time" },
+                { label: "이용 인원", value: String(data.guest_count || 0), type: "number" },
+                { label: "이용 목적", value: data.purpose || "", type: "textarea" },
+              ]);
+            }
+          } else {
+            // 계약서에 reservation_items가 없는 경우 (기존 계약서) 기본값 사용
+            setReservationItems([
+              { label: "예약서비스", value: data.location || "", type: "text" },
+              { label: "예약 날짜", value: data.reservation_date || "", type: "date" },
+              { label: "입실 시간", value: data.checkin_time || "", type: "time" },
+              { label: "퇴실 시간", value: data.checkout_time || "", type: "time" },
+              { label: "이용 인원", value: String(data.guest_count || 0), type: "number" },
+              { label: "이용 목적", value: data.purpose || "", type: "textarea" },
             ]);
           }
 
@@ -318,18 +354,24 @@ const ContractResponse = () => {
         <div style={{ marginBottom: '30px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>■ 예약 정보</h2>
           <div style={{ fontSize: '15px', color: '#333', lineHeight: '1.8' }}>
-            <p style={{ marginBottom: '8px' }}>1) 예약서비스</p>
-            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>{contract.location}</p>
-            <p style={{ marginBottom: '8px' }}>2) 예약 날짜</p>
-            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>{formatDate(contract.reservation_date)}</p>
-            <p style={{ marginBottom: '8px' }}>3) 입실 시간 (준비 포함)</p>
-            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>{formatTime(contract.checkin_time)}</p>
-            <p style={{ marginBottom: '8px' }}>4) 퇴실 시간 (정리 포함)</p>
-            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>{formatTime(contract.checkout_time)}</p>
-            <p style={{ marginBottom: '8px' }}>5) 이용 인원</p>
-            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>{contract.guest_count}명</p>
-            <p style={{ marginBottom: '8px' }}>6) 이용 목적</p>
-            <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>{contract.purpose || "(작성)"}</p>
+            {reservationItems.map((item, index) => {
+              let displayValue = item.value;
+              if (item.type === "date" && item.value) {
+                displayValue = formatDate(item.value);
+              } else if (item.type === "time" && item.value) {
+                displayValue = formatTime(item.value);
+              } else if (item.type === "number" && item.value) {
+                displayValue = `${item.value}명`;
+              } else if (!item.value) {
+                displayValue = "(작성)";
+              }
+              return (
+                <div key={index}>
+                  <p style={{ marginBottom: '8px' }}>{index + 1}) {item.label}</p>
+                  <p style={{ marginBottom: '15px', paddingLeft: '20px', whiteSpace: 'pre-wrap' }}>{displayValue}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
 
