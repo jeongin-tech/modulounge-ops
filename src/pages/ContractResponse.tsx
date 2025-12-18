@@ -333,7 +333,7 @@ const ContractResponse = () => {
         <div style={{ marginBottom: '30px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>■ 예약 정보</h2>
           <div style={{ fontSize: '15px', color: '#333', lineHeight: '1.8' }}>
-            <p style={{ marginBottom: '8px' }}>1) 예약호실</p>
+            <p style={{ marginBottom: '8px' }}>1) 예약서비스</p>
             <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>{contract.location}</p>
             <p style={{ marginBottom: '8px' }}>2) 예약 날짜</p>
             <p style={{ marginBottom: '15px', paddingLeft: '20px' }}>{formatDate(contract.reservation_date)}</p>
