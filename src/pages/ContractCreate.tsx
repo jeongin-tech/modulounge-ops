@@ -17,6 +17,11 @@ import {
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 
+interface PricingItem {
+  label: string;
+  field: string;
+}
+
 interface Template {
   id: string;
   name: string;
@@ -25,13 +30,22 @@ interface Template {
   additional_price_per_person: number;
   cleaning_fee: number;
   vat_rate: number;
+  pricing_items: PricingItem[];
 }
+
+const DEFAULT_PRICING_ITEMS: PricingItem[] = [
+  { label: "기본 이용료 (10인 기준)", field: "base_price" },
+  { label: "인원 추가", field: "additional_price" },
+  { label: "청소대행", field: "cleaning_fee" },
+  { label: "부가세", field: "vat" },
+];
 
 const ContractCreate = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+  const [pricingItems, setPricingItems] = useState<PricingItem[]>(DEFAULT_PRICING_ITEMS);
   const [formData, setFormData] = useState({
     location: "",
     reservation_date: "",
@@ -59,7 +73,15 @@ const ContractCreate = () => {
         .order("name");
 
       if (error) throw error;
-      setTemplates(data || []);
+      
+      const templatesWithPricingItems = (data || []).map((t) => ({
+        ...t,
+        pricing_items: Array.isArray(t.pricing_items) 
+          ? (t.pricing_items as unknown as PricingItem[]) 
+          : DEFAULT_PRICING_ITEMS,
+      }));
+      
+      setTemplates(templatesWithPricingItems);
     } catch (error) {
       console.error("템플릿 조회 오류:", error);
     }
@@ -71,6 +93,9 @@ const ContractCreate = () => {
     const subtotal = template.base_price + additionalPrice + template.cleaning_fee;
     const vat = Math.round(subtotal * template.vat_rate);
     const total = subtotal + vat;
+
+    // Update pricing items from template
+    setPricingItems(template.pricing_items || DEFAULT_PRICING_ITEMS);
 
     setFormData({
       ...formData,
@@ -113,6 +138,14 @@ const ContractCreate = () => {
     }
   };
 
+  const handlePriceChange = (field: string, value: number) => {
+    const validValue = isNaN(value) ? 0 : value;
+    setFormData((prev) => ({
+      ...prev,
+      [field]: validValue,
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -126,7 +159,7 @@ const ContractCreate = () => {
         .insert([
           {
             ...formData,
-            template_id: selectedTemplate,
+            template_id: selectedTemplate || null,
             created_by: user.id,
           },
         ])
@@ -149,6 +182,20 @@ const ContractCreate = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getPriceValue = (field: string): number => {
+    const fieldMap: Record<string, keyof typeof formData> = {
+      base_price: "base_price",
+      additional_price: "additional_price",
+      cleaning_fee: "cleaning_fee",
+      vat: "vat",
+    };
+    const mappedField = fieldMap[field];
+    if (mappedField && typeof formData[mappedField] === "number") {
+      return formData[mappedField] as number;
+    }
+    return 0;
   };
 
   return (
@@ -299,66 +346,20 @@ const ContractCreate = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="base_price">기본 이용료 (10인 기준)</Label>
-                  <Input
-                    id="base_price"
-                    type="number"
-                    value={formData.base_price}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        base_price: parseInt(e.target.value),
-                      })
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="additional_price">인원 추가</Label>
-                  <Input
-                    id="additional_price"
-                    type="number"
-                    value={formData.additional_price}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        additional_price: parseInt(e.target.value),
-                      })
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="cleaning_fee">청소대행</Label>
-                  <Input
-                    id="cleaning_fee"
-                    type="number"
-                    value={formData.cleaning_fee}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        cleaning_fee: parseInt(e.target.value),
-                      })
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="vat">부가세</Label>
-                  <Input
-                    id="vat"
-                    type="number"
-                    value={formData.vat}
-                    onChange={(e) =>
-                      setFormData({ ...formData, vat: parseInt(e.target.value) })
-                    }
-                    required
-                  />
-                </div>
+                {pricingItems.map((item, index) => (
+                  <div key={`${item.field}-${index}`} className="space-y-2">
+                    <Label htmlFor={item.field}>{item.label}</Label>
+                    <Input
+                      id={item.field}
+                      type="number"
+                      value={getPriceValue(item.field)}
+                      onChange={(e) =>
+                        handlePriceChange(item.field, parseInt(e.target.value))
+                      }
+                      required
+                    />
+                  </div>
+                ))}
 
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="total_amount" className="text-lg font-bold">
@@ -371,7 +372,7 @@ const ContractCreate = () => {
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        total_amount: parseInt(e.target.value),
+                        total_amount: parseInt(e.target.value) || 0,
                       })
                     }
                     className="text-lg font-bold"
