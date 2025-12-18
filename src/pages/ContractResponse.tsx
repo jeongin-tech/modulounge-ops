@@ -6,6 +6,12 @@ import { ko } from "date-fns/locale";
 import { toast } from "sonner";
 import companyStamp from "@/assets/company-stamp.png";
 
+interface PricingItem {
+  label: string;
+  value: number;
+  type: "number" | "percent";
+}
+
 interface Contract {
   location: string;
   reservation_date: string;
@@ -36,11 +42,13 @@ interface Contract {
   receipt_email: string | null;
   personal_phone: string | null;
   personal_id_number: string | null;
+  template_id: string | null;
 }
 
 const ContractResponse = () => {
   const { token } = useParams<{ token: string }>();
   const [contract, setContract] = useState<Contract | null>(null);
+  const [pricingItems, setPricingItems] = useState<PricingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   
@@ -99,6 +107,47 @@ const ContractResponse = () => {
           setReceiptEmail(data.receipt_email || "");
           setPersonalPhone(data.personal_phone || "");
           setPersonalIdNumber(data.personal_id_number || "");
+
+          // 템플릿에서 요금 항목 가져오기
+          if (data.template_id) {
+            const { data: templateData } = await supabase
+              .from("contract_templates")
+              .select("pricing_items")
+              .eq("id", data.template_id)
+              .maybeSingle();
+
+            if (templateData?.pricing_items && Array.isArray(templateData.pricing_items)) {
+              const items = templateData.pricing_items as any[];
+              // 새 형식인지 확인 (value 속성이 있는지)
+              if (items.length > 0 && 'value' in items[0]) {
+                setPricingItems(items as PricingItem[]);
+              } else {
+                // 구 형식: 계약서의 금액 데이터 사용
+                setPricingItems([
+                  { label: "기본 이용료", value: data.base_price || 0, type: "number" },
+                  { label: "인원 추가", value: data.additional_price || 0, type: "number" },
+                  { label: "청소대행", value: data.cleaning_fee || 0, type: "number" },
+                  { label: "부가세", value: data.vat || 0, type: "number" },
+                ]);
+              }
+            } else {
+              // 템플릿이 없거나 pricing_items가 없는 경우 기본값 사용
+              setPricingItems([
+                { label: "기본 이용료", value: data.base_price || 0, type: "number" },
+                { label: "인원 추가", value: data.additional_price || 0, type: "number" },
+                { label: "청소대행", value: data.cleaning_fee || 0, type: "number" },
+                { label: "부가세", value: data.vat || 0, type: "number" },
+              ]);
+            }
+          } else {
+            // 템플릿이 없는 경우 기본값 사용
+            setPricingItems([
+              { label: "기본 이용료", value: data.base_price || 0, type: "number" },
+              { label: "인원 추가", value: data.additional_price || 0, type: "number" },
+              { label: "청소대행", value: data.cleaning_fee || 0, type: "number" },
+              { label: "부가세", value: data.vat || 0, type: "number" },
+            ]);
+          }
         }
       }
       setLoading(false);
@@ -302,10 +351,13 @@ const ContractResponse = () => {
         <div style={{ marginBottom: '30px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>■ 이용 요금</h2>
           <div style={{ fontSize: '15px', color: '#333', lineHeight: '1.8' }}>
-            <p style={{ marginBottom: '8px' }}>기본 이용료(10인 기준): {formatCurrency(contract.base_price)}원</p>
-            <p style={{ marginBottom: '8px' }}>인원 추가: {formatCurrency(contract.additional_price)}원</p>
-            <p style={{ marginBottom: '8px' }}>청소대행: {formatCurrency(contract.cleaning_fee)}원</p>
-            <p style={{ marginBottom: '8px' }}>부가세: {formatCurrency(contract.vat)}원</p>
+            {pricingItems.map((item, index) => (
+              <p key={index} style={{ marginBottom: '8px' }}>
+                {item.label}: {item.type === "percent" 
+                  ? `${(item.value * 100).toFixed(0)}%` 
+                  : `${formatCurrency(item.value)}원`}
+              </p>
+            ))}
             <p style={{ marginTop: '15px', fontWeight: 'bold', fontSize: '16px' }}>▶ 총 입금 금액: {formatCurrency(contract.total_amount)}원</p>
           </div>
         </div>
