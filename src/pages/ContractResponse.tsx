@@ -45,6 +45,7 @@ interface Contract {
   template_id: string | null;
   terms_content: string | null;
   refund_policy: string | null;
+  pricing_items: unknown;
 }
 
 const ContractResponse = () => {
@@ -114,36 +115,13 @@ const ContractResponse = () => {
           setPersonalPhone(data.personal_phone || "");
           setPersonalIdNumber(data.personal_id_number || "");
 
-          // 템플릿에서 요금 항목 및 유의사항 가져오기
-          if (data.template_id) {
-            const { data: templateData } = await supabase
-              .from("contract_templates")
-              .select("pricing_items, terms_content, refund_policy")
-              .eq("id", data.template_id)
-              .maybeSingle();
-
-            // 템플릿의 terms_content와 refund_policy를 fallback으로 저장
-            if (templateData) {
-              setTemplateTermsContent(templateData.terms_content || null);
-              setTemplateRefundPolicy(templateData.refund_policy || null);
-            }
-
-            if (templateData?.pricing_items && Array.isArray(templateData.pricing_items)) {
-              const items = templateData.pricing_items as any[];
-              // 새 형식인지 확인 (value 속성이 있는지)
-              if (items.length > 0 && 'value' in items[0]) {
-                setPricingItems(items as PricingItem[]);
-              } else {
-                // 구 형식: 계약서의 금액 데이터 사용
-                setPricingItems([
-                  { label: "기본 이용료", value: data.base_price || 0, type: "number" },
-                  { label: "인원 추가", value: data.additional_price || 0, type: "number" },
-                  { label: "청소대행", value: data.cleaning_fee || 0, type: "number" },
-                  { label: "부가세", value: data.vat || 0, type: "number" },
-                ]);
-              }
+          // 계약서에 저장된 pricing_items가 있으면 우선 사용
+          if (data.pricing_items && Array.isArray(data.pricing_items)) {
+            const items = data.pricing_items as any[];
+            if (items.length > 0 && 'value' in items[0]) {
+              setPricingItems(items as PricingItem[]);
             } else {
-              // 템플릿이 없거나 pricing_items가 없는 경우 기본값 사용
+              // 기본 형식 사용
               setPricingItems([
                 { label: "기본 이용료", value: data.base_price || 0, type: "number" },
                 { label: "인원 추가", value: data.additional_price || 0, type: "number" },
@@ -152,13 +130,27 @@ const ContractResponse = () => {
               ]);
             }
           } else {
-            // 템플릿이 없는 경우 기본값 사용
+            // 계약서에 pricing_items가 없는 경우 (기존 계약서) 기본값 사용
             setPricingItems([
               { label: "기본 이용료", value: data.base_price || 0, type: "number" },
               { label: "인원 추가", value: data.additional_price || 0, type: "number" },
               { label: "청소대행", value: data.cleaning_fee || 0, type: "number" },
               { label: "부가세", value: data.vat || 0, type: "number" },
             ]);
+          }
+
+          // 템플릿에서 유의사항 fallback 가져오기 (terms_content, refund_policy가 없는 경우 대비)
+          if (data.template_id) {
+            const { data: templateData } = await supabase
+              .from("contract_templates")
+              .select("terms_content, refund_policy")
+              .eq("id", data.template_id)
+              .maybeSingle();
+
+            if (templateData) {
+              setTemplateTermsContent(templateData.terms_content || null);
+              setTemplateRefundPolicy(templateData.refund_policy || null);
+            }
           }
         }
       }
