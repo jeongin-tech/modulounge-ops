@@ -211,6 +211,7 @@ export type Database = {
           created_at: string
           created_by: string
           description: string | null
+          field_labels: Json | null
           id: string
           image_urls: Json | null
           is_active: boolean
@@ -229,6 +230,7 @@ export type Database = {
           created_at?: string
           created_by: string
           description?: string | null
+          field_labels?: Json | null
           id?: string
           image_urls?: Json | null
           is_active?: boolean
@@ -247,6 +249,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           description?: string | null
+          field_labels?: Json | null
           id?: string
           image_urls?: Json | null
           is_active?: boolean

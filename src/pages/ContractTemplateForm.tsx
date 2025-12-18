@@ -29,6 +29,14 @@ const ContractTemplateForm = () => {
     cleaning_fee: 0,
     vat_rate: 0,
     image_urls: [] as string[],
+    // 요금 설정 필드 라벨 (수정 가능)
+    field_labels: {
+      base_price: "기본 이용료",
+      base_guest_count: "기본 인원",
+      additional_price_per_person: "인당 추가 요금",
+      cleaning_fee: "청소대행비",
+      vat_rate: "부가세율",
+    },
     pricing_items: [
       { label: "", field: "base_price" },
       { label: "", field: "additional_price" },
@@ -84,6 +92,15 @@ const ContractTemplateForm = () => {
         .single();
 
       if (error) throw error;
+      
+      const defaultFieldLabels = {
+        base_price: "기본 이용료",
+        base_guest_count: "기본 인원",
+        additional_price_per_person: "인당 추가 요금",
+        cleaning_fee: "청소대행비",
+        vat_rate: "부가세율",
+      };
+      
       setFormData({
         name: data.name,
         description: data.description || "",
@@ -93,6 +110,7 @@ const ContractTemplateForm = () => {
         cleaning_fee: data.cleaning_fee,
         vat_rate: data.vat_rate,
         image_urls: Array.isArray(data.image_urls) ? (data.image_urls as unknown as string[]) : [],
+        field_labels: (data as any).field_labels || defaultFieldLabels,
         pricing_items: Array.isArray(data.pricing_items) ? (data.pricing_items as unknown as PricingItem[]) : [
           { label: "기본 이용료 (10인 기준)", field: "base_price" },
           { label: "인원 추가", field: "additional_price" },
@@ -150,6 +168,7 @@ const ContractTemplateForm = () => {
             ...formData,
             image_urls: formData.image_urls as any,
             pricing_items: formData.pricing_items as any,
+            field_labels: formData.field_labels as any,
           })
           .eq("id", id);
 
@@ -163,6 +182,7 @@ const ContractTemplateForm = () => {
               ...formData,
               image_urls: formData.image_urls as any,
               pricing_items: formData.pricing_items as any,
+              field_labels: formData.field_labels as any,
               created_by: user.id,
             },
           ]);
@@ -241,7 +261,20 @@ const ContractTemplateForm = () => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="base_price">기본 이용료 *</Label>
+                  <div className="flex gap-2 items-center">
+                    <Input
+                      value={formData.field_labels.base_price}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          field_labels: { ...formData.field_labels, base_price: e.target.value },
+                        })
+                      }
+                      placeholder="항목명 (예: 기본 이용료)"
+                      className="text-sm font-medium"
+                    />
+                    <span className="text-destructive">*</span>
+                  </div>
                   <Input
                     id="base_price"
                     type="number"
@@ -257,7 +290,20 @@ const ContractTemplateForm = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="base_guest_count">기본 인원 *</Label>
+                  <div className="flex gap-2 items-center">
+                    <Input
+                      value={formData.field_labels.base_guest_count}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          field_labels: { ...formData.field_labels, base_guest_count: e.target.value },
+                        })
+                      }
+                      placeholder="항목명 (예: 기본 인원)"
+                      className="text-sm font-medium"
+                    />
+                    <span className="text-destructive">*</span>
+                  </div>
                   <Input
                     id="base_guest_count"
                     type="number"
@@ -273,7 +319,20 @@ const ContractTemplateForm = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="additional_price_per_person">인당 추가 요금 *</Label>
+                  <div className="flex gap-2 items-center">
+                    <Input
+                      value={formData.field_labels.additional_price_per_person}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          field_labels: { ...formData.field_labels, additional_price_per_person: e.target.value },
+                        })
+                      }
+                      placeholder="항목명 (예: 인당 추가 요금)"
+                      className="text-sm font-medium"
+                    />
+                    <span className="text-destructive">*</span>
+                  </div>
                   <Input
                     id="additional_price_per_person"
                     type="number"
@@ -289,7 +348,20 @@ const ContractTemplateForm = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="cleaning_fee">청소대행비 *</Label>
+                  <div className="flex gap-2 items-center">
+                    <Input
+                      value={formData.field_labels.cleaning_fee}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          field_labels: { ...formData.field_labels, cleaning_fee: e.target.value },
+                        })
+                      }
+                      placeholder="항목명 (예: 청소대행비)"
+                      className="text-sm font-medium"
+                    />
+                    <span className="text-destructive">*</span>
+                  </div>
                   <Input
                     id="cleaning_fee"
                     type="number"
@@ -305,7 +377,20 @@ const ContractTemplateForm = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="vat_rate">부가세율 *</Label>
+                  <div className="flex gap-2 items-center">
+                    <Input
+                      value={formData.field_labels.vat_rate}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          field_labels: { ...formData.field_labels, vat_rate: e.target.value },
+                        })
+                      }
+                      placeholder="항목명 (예: 부가세율)"
+                      className="text-sm font-medium"
+                    />
+                    <span className="text-destructive">*</span>
+                  </div>
                   <Input
                     id="vat_rate"
                     type="number"
@@ -322,6 +407,10 @@ const ContractTemplateForm = () => {
                   />
                 </div>
               </div>
+
+              <p className="text-sm text-muted-foreground mt-2">
+                각 항목의 이름을 수정할 수 있습니다. 계약서 작성 시 이 이름으로 표시됩니다.
+              </p>
 
               <div className="pt-4 border-t">
                 <div className="flex items-center justify-between mb-4">
