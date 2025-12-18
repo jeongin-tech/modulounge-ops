@@ -33,17 +33,17 @@ const ContractCreate = () => {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [formData, setFormData] = useState({
-    location: "모드라운지 역삼점",
+    location: "",
     reservation_date: "",
-    checkin_time: "09:00",
-    checkout_time: "16:30",
-    guest_count: 35,
+    checkin_time: "",
+    checkout_time: "",
+    guest_count: 0,
     purpose: "",
-    base_price: 340000,
-    additional_price: 250000,
-    cleaning_fee: 150000,
-    vat: 74000,
-    total_amount: 814000,
+    base_price: 0,
+    additional_price: 0,
+    cleaning_fee: 0,
+    vat: 0,
+    total_amount: 0,
   });
 
   useEffect(() => {
@@ -60,12 +60,6 @@ const ContractCreate = () => {
 
       if (error) throw error;
       setTemplates(data || []);
-      
-      // Auto-select first template if available
-      if (data && data.length > 0) {
-        setSelectedTemplate(data[0].id);
-        applyTemplate(data[0]);
-      }
     } catch (error) {
       console.error("템플릿 조회 오류:", error);
     }
@@ -97,11 +91,11 @@ const ContractCreate = () => {
   };
 
   const handleGuestCountChange = (count: number) => {
-    setFormData({ ...formData, guest_count: count });
+    const validCount = isNaN(count) ? 0 : count;
     
     const template = templates.find((t) => t.id === selectedTemplate);
     if (template) {
-      const additionalGuests = Math.max(0, count - template.base_guest_count);
+      const additionalGuests = Math.max(0, validCount - template.base_guest_count);
       const additionalPrice = additionalGuests * template.additional_price_per_person;
       const subtotal = template.base_price + additionalPrice + template.cleaning_fee;
       const vat = Math.round(subtotal * template.vat_rate);
@@ -109,11 +103,13 @@ const ContractCreate = () => {
 
       setFormData({
         ...formData,
-        guest_count: count,
+        guest_count: validCount,
         additional_price: additionalPrice,
         vat: vat,
         total_amount: total,
       });
+    } else {
+      setFormData({ ...formData, guest_count: validCount });
     }
   };
 
