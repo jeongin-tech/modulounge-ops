@@ -23,17 +23,17 @@ const ContractTemplateForm = () => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    base_price: 340000,
-    base_guest_count: 10,
-    additional_price_per_person: 25000,
-    cleaning_fee: 150000,
-    vat_rate: 0.1,
+    base_price: 0,
+    base_guest_count: 0,
+    additional_price_per_person: 0,
+    cleaning_fee: 0,
+    vat_rate: 0,
     image_urls: [] as string[],
     pricing_items: [
-      { label: "기본 이용료 (10인 기준)", field: "base_price" },
-      { label: "인원 추가", field: "additional_price" },
-      { label: "청소대행", field: "cleaning_fee" },
-      { label: "부가세", field: "vat" },
+      { label: "", field: "base_price" },
+      { label: "", field: "additional_price" },
+      { label: "", field: "cleaning_fee" },
+      { label: "", field: "vat" },
     ] as PricingItem[],
     terms_content: `■ 이용 유의사항
 
