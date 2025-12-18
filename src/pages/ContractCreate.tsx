@@ -23,6 +23,12 @@ interface PricingItem {
   type: "number" | "percent";
 }
 
+interface ReservationItem {
+  label: string;
+  value: string;
+  type: "text" | "date" | "time" | "number" | "textarea";
+}
+
 interface Template {
   id: string;
   name: string;
@@ -37,6 +43,15 @@ const DEFAULT_PRICING_ITEMS: PricingItem[] = [
   { label: "인당 추가 요금", value: 0, type: "number" },
   { label: "청소대행비", value: 0, type: "number" },
   { label: "부가세율", value: 0, type: "percent" },
+];
+
+const DEFAULT_RESERVATION_ITEMS: ReservationItem[] = [
+  { label: "예약서비스", value: "", type: "text" },
+  { label: "예약 날짜", value: "", type: "date" },
+  { label: "입실 시간", value: "", type: "time" },
+  { label: "퇴실 시간", value: "", type: "time" },
+  { label: "이용 인원", value: "", type: "number" },
+  { label: "이용 목적", value: "", type: "textarea" },
 ];
 
 const DEFAULT_TERMS_CONTENT = `■ 이용 유의사항
@@ -81,19 +96,8 @@ const ContractCreate = () => {
   const [pricingItems, setPricingItems] = useState<PricingItem[]>(DEFAULT_PRICING_ITEMS);
   const [termsContent, setTermsContent] = useState<string>(DEFAULT_TERMS_CONTENT);
   const [refundPolicy, setRefundPolicy] = useState<string>(DEFAULT_REFUND_POLICY);
-  const [formData, setFormData] = useState({
-    location: "",
-    reservation_date: "",
-    checkin_time: "",
-    checkout_time: "",
-    guest_count: 0,
-    purpose: "",
-    base_price: 0,
-    additional_price: 0,
-    cleaning_fee: 0,
-    vat: 0,
-    total_amount: 0,
-  });
+  const [reservationItems, setReservationItems] = useState<ReservationItem[]>(DEFAULT_RESERVATION_ITEMS);
+  const [totalAmount, setTotalAmount] = useState(0);
 
   useEffect(() => {
     fetchTemplates();
@@ -168,11 +172,25 @@ const ContractCreate = () => {
       .reduce((sum, item) => sum + Math.round(numberSum * item.value), 0);
     
     const total = numberSum + percentSum;
-    
-    setFormData(prev => ({
-      ...prev,
-      total_amount: total,
-    }));
+    setTotalAmount(total);
+  };
+
+  const handleReservationItemChange = (index: number, field: keyof ReservationItem, value: string) => {
+    const newItems = reservationItems.map((item, i) =>
+      i === index ? { ...item, [field]: value } : item
+    );
+    setReservationItems(newItems);
+  };
+
+  const addReservationItem = () => {
+    setReservationItems([
+      ...reservationItems,
+      { label: "", value: "", type: "text" as const },
+    ]);
+  };
+
+  const removeReservationItem = (index: number) => {
+    setReservationItems(reservationItems.filter((_, i) => i !== index));
   };
 
   const handleTemplateChange = (templateId: string) => {
@@ -213,6 +231,12 @@ const ContractCreate = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("로그인이 필요합니다.");
 
+      // reservationItems에서 호환성을 위한 기존 필드 추출
+      const getReservationValue = (label: string) => {
+        const item = reservationItems.find(i => i.label === label);
+        return item?.value || "";
+      };
+
       // 호환성을 위해 기존 필드도 저장
       const basePrice = pricingItems[0]?.value || 0;
       const cleaningFee = pricingItems[3]?.value || 0;
@@ -224,22 +248,23 @@ const ContractCreate = () => {
         .from("contracts")
         .insert([
           {
-            location: formData.location,
-            reservation_date: formData.reservation_date,
-            checkin_time: formData.checkin_time,
-            checkout_time: formData.checkout_time,
-            guest_count: formData.guest_count,
-            purpose: formData.purpose,
+            location: getReservationValue("예약서비스"),
+            reservation_date: getReservationValue("예약 날짜"),
+            checkin_time: getReservationValue("입실 시간") || "00:00",
+            checkout_time: getReservationValue("퇴실 시간") || "00:00",
+            guest_count: parseInt(getReservationValue("이용 인원")) || 0,
+            purpose: getReservationValue("이용 목적"),
             base_price: basePrice,
             additional_price: pricingItems[2]?.value || 0,
             cleaning_fee: cleaningFee,
             vat: vat,
-            total_amount: formData.total_amount,
+            total_amount: totalAmount,
             template_id: selectedTemplate || null,
             created_by: user.id,
             terms_content: termsContent,
             refund_policy: refundPolicy,
             pricing_items: JSON.parse(JSON.stringify(pricingItems)),
+            reservation_items: JSON.parse(JSON.stringify(reservationItems)),
           },
         ])
         .select()
@@ -325,83 +350,64 @@ const ContractCreate = () => {
               <CardTitle>예약 정보</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="location">예약서비스</Label>
-                  <Input
-                    id="location"
-                    value={formData.location}
-                    onChange={(e) =>
-                      setFormData({ ...formData, location: e.target.value })
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="reservation_date">예약 날짜</Label>
-                  <Input
-                    id="reservation_date"
-                    type="date"
-                    value={formData.reservation_date}
-                    onChange={(e) =>
-                      setFormData({ ...formData, reservation_date: e.target.value })
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="checkin_time">입실 시간</Label>
-                  <Input
-                    id="checkin_time"
-                    type="time"
-                    value={formData.checkin_time}
-                    onChange={(e) =>
-                      setFormData({ ...formData, checkin_time: e.target.value })
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="checkout_time">퇴실 시간</Label>
-                  <Input
-                    id="checkout_time"
-                    type="time"
-                    value={formData.checkout_time}
-                    onChange={(e) =>
-                      setFormData({ ...formData, checkout_time: e.target.value })
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="guest_count">이용 인원</Label>
-                  <Input
-                    id="guest_count"
-                    type="number"
-                    value={formData.guest_count}
-                    onChange={(e) =>
-                      setFormData({ ...formData, guest_count: parseInt(e.target.value) || 0 })
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="purpose">이용 목적</Label>
-                  <Textarea
-                    id="purpose"
-                    value={formData.purpose}
-                    onChange={(e) =>
-                      setFormData({ ...formData, purpose: e.target.value })
-                    }
-                    placeholder="선택사항"
-                  />
-                </div>
+              <div className="space-y-3">
+                {reservationItems.map((item, index) => (
+                  <div key={index} className="flex gap-2 items-start p-3 border rounded-lg bg-muted/30">
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
+                      <Input
+                        value={item.label}
+                        onChange={(e) => handleReservationItemChange(index, "label", e.target.value)}
+                        placeholder="항목명"
+                      />
+                      <select
+                        value={item.type}
+                        onChange={(e) => handleReservationItemChange(index, "type", e.target.value)}
+                        className="px-3 py-2 border rounded-md bg-background text-sm"
+                      >
+                        <option value="text">텍스트</option>
+                        <option value="date">날짜</option>
+                        <option value="time">시간</option>
+                        <option value="number">숫자</option>
+                        <option value="textarea">긴 텍스트</option>
+                      </select>
+                      {item.type === "textarea" ? (
+                        <Textarea
+                          value={item.value}
+                          onChange={(e) => handleReservationItemChange(index, "value", e.target.value)}
+                          placeholder="값 입력"
+                          className="md:col-span-1"
+                        />
+                      ) : (
+                        <Input
+                          type={item.type === "date" ? "date" : item.type === "time" ? "time" : item.type === "number" ? "number" : "text"}
+                          value={item.value}
+                          onChange={(e) => handleReservationItemChange(index, "value", e.target.value)}
+                          placeholder="값 입력"
+                        />
+                      )}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeReservationItem(index)}
+                      className="shrink-0"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
               </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addReservationItem}
+                className="w-full"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                항목 추가
+              </Button>
             </CardContent>
           </Card>
 
@@ -470,13 +476,8 @@ const ContractCreate = () => {
                 <Input
                   id="total_amount"
                   type="number"
-                  value={formData.total_amount}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      total_amount: parseInt(e.target.value) || 0,
-                    })
-                  }
+                  value={totalAmount}
+                  onChange={(e) => setTotalAmount(parseInt(e.target.value) || 0)}
                   className="text-lg font-bold"
                   required
                 />
