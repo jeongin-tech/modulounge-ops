@@ -19,25 +19,22 @@ import { ArrowLeft } from "lucide-react";
 
 interface PricingItem {
   label: string;
-  field: string;
+  value: number;
+  type: "number" | "percent";
 }
 
 interface Template {
   id: string;
   name: string;
-  base_price: number;
-  base_guest_count: number;
-  additional_price_per_person: number;
-  cleaning_fee: number;
-  vat_rate: number;
   pricing_items: PricingItem[];
 }
 
 const DEFAULT_PRICING_ITEMS: PricingItem[] = [
-  { label: "기본 이용료 (10인 기준)", field: "base_price" },
-  { label: "인원 추가", field: "additional_price" },
-  { label: "청소대행", field: "cleaning_fee" },
-  { label: "부가세", field: "vat" },
+  { label: "기본 이용료", value: 0, type: "number" },
+  { label: "기본 인원", value: 0, type: "number" },
+  { label: "인당 추가 요금", value: 0, type: "number" },
+  { label: "청소대행비", value: 0, type: "number" },
+  { label: "부가세율", value: 0, type: "percent" },
 ];
 
 const ContractCreate = () => {
@@ -74,12 +71,32 @@ const ContractCreate = () => {
 
       if (error) throw error;
       
-      const templatesWithPricingItems = (data || []).map((t) => ({
-        ...t,
-        pricing_items: Array.isArray(t.pricing_items) 
-          ? (t.pricing_items as unknown as PricingItem[]) 
-          : DEFAULT_PRICING_ITEMS,
-      }));
+      const templatesWithPricingItems = (data || []).map((t) => {
+        let pricingItems: PricingItem[] = DEFAULT_PRICING_ITEMS;
+        
+        if (Array.isArray(t.pricing_items)) {
+          const items = t.pricing_items as any[];
+          // 새 형식인지 확인 (value 속성이 있는지)
+          if (items.length > 0 && 'value' in items[0]) {
+            pricingItems = items as PricingItem[];
+          } else {
+            // 구 형식을 새 형식으로 변환
+            pricingItems = [
+              { label: "기본 이용료", value: t.base_price || 0, type: "number" as const },
+              { label: "기본 인원", value: t.base_guest_count || 0, type: "number" as const },
+              { label: "인당 추가 요금", value: t.additional_price_per_person || 0, type: "number" as const },
+              { label: "청소대행비", value: t.cleaning_fee || 0, type: "number" as const },
+              { label: "부가세율", value: t.vat_rate || 0, type: "percent" as const },
+            ];
+          }
+        }
+        
+        return {
+          id: t.id,
+          name: t.name,
+          pricing_items: pricingItems,
+        };
+      });
       
       setTemplates(templatesWithPricingItems);
     } catch (error) {
@@ -88,23 +105,30 @@ const ContractCreate = () => {
   };
 
   const applyTemplate = (template: Template) => {
-    const additionalGuests = Math.max(0, formData.guest_count - template.base_guest_count);
-    const additionalPrice = additionalGuests * template.additional_price_per_person;
-    const subtotal = template.base_price + additionalPrice + template.cleaning_fee;
-    const vat = Math.round(subtotal * template.vat_rate);
-    const total = subtotal + vat;
+    // 템플릿의 요금 항목을 적용
+    setPricingItems(template.pricing_items);
+    
+    // 총액 계산 (% 타입은 다른 금액들의 합에 대한 비율로 계산)
+    calculateTotal(template.pricing_items);
+  };
 
-    // Update pricing items from template
-    setPricingItems(template.pricing_items || DEFAULT_PRICING_ITEMS);
-
-    setFormData({
-      ...formData,
-      base_price: template.base_price,
-      additional_price: additionalPrice,
-      cleaning_fee: template.cleaning_fee,
-      vat: vat,
+  const calculateTotal = (items: PricingItem[]) => {
+    // 숫자 타입 합계
+    const numberSum = items
+      .filter(item => item.type === "number")
+      .reduce((sum, item) => sum + item.value, 0);
+    
+    // 퍼센트 타입 계산 (숫자 합계에 대한 비율)
+    const percentSum = items
+      .filter(item => item.type === "percent")
+      .reduce((sum, item) => sum + Math.round(numberSum * item.value), 0);
+    
+    const total = numberSum + percentSum;
+    
+    setFormData(prev => ({
+      ...prev,
       total_amount: total,
-    });
+    }));
   };
 
   const handleTemplateChange = (templateId: string) => {
@@ -115,35 +139,13 @@ const ContractCreate = () => {
     }
   };
 
-  const handleGuestCountChange = (count: number) => {
-    const validCount = isNaN(count) ? 0 : count;
-    
-    const template = templates.find((t) => t.id === selectedTemplate);
-    if (template) {
-      const additionalGuests = Math.max(0, validCount - template.base_guest_count);
-      const additionalPrice = additionalGuests * template.additional_price_per_person;
-      const subtotal = template.base_price + additionalPrice + template.cleaning_fee;
-      const vat = Math.round(subtotal * template.vat_rate);
-      const total = subtotal + vat;
-
-      setFormData({
-        ...formData,
-        guest_count: validCount,
-        additional_price: additionalPrice,
-        vat: vat,
-        total_amount: total,
-      });
-    } else {
-      setFormData({ ...formData, guest_count: validCount });
-    }
-  };
-
-  const handlePriceChange = (field: string, value: number) => {
+  const handlePricingItemChange = (index: number, value: number) => {
     const validValue = isNaN(value) ? 0 : value;
-    setFormData((prev) => ({
-      ...prev,
-      [field]: validValue,
-    }));
+    const newItems = pricingItems.map((item, i) =>
+      i === index ? { ...item, value: validValue } : item
+    );
+    setPricingItems(newItems);
+    calculateTotal(newItems);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -154,11 +156,28 @@ const ContractCreate = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("로그인이 필요합니다.");
 
+      // 호환성을 위해 기존 필드도 저장
+      const basePrice = pricingItems[0]?.value || 0;
+      const cleaningFee = pricingItems[3]?.value || 0;
+      const vatRate = pricingItems[4]?.value || 0;
+      const subtotal = pricingItems.filter(i => i.type === "number").reduce((s, i) => s + i.value, 0);
+      const vat = Math.round(subtotal * vatRate);
+
       const { data, error } = await supabase
         .from("contracts")
         .insert([
           {
-            ...formData,
+            location: formData.location,
+            reservation_date: formData.reservation_date,
+            checkin_time: formData.checkin_time,
+            checkout_time: formData.checkout_time,
+            guest_count: formData.guest_count,
+            purpose: formData.purpose,
+            base_price: basePrice,
+            additional_price: pricingItems[2]?.value || 0,
+            cleaning_fee: cleaningFee,
+            vat: vat,
+            total_amount: formData.total_amount,
             template_id: selectedTemplate || null,
             created_by: user.id,
           },
@@ -182,20 +201,6 @@ const ContractCreate = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const getPriceValue = (field: string): number => {
-    const fieldMap: Record<string, keyof typeof formData> = {
-      base_price: "base_price",
-      additional_price: "additional_price",
-      cleaning_fee: "cleaning_fee",
-      vat: "vat",
-    };
-    const mappedField = fieldMap[field];
-    if (mappedField && typeof formData[mappedField] === "number") {
-      return formData[mappedField] as number;
-    }
-    return 0;
   };
 
   return (
@@ -319,7 +324,7 @@ const ContractCreate = () => {
                     type="number"
                     value={formData.guest_count}
                     onChange={(e) =>
-                      handleGuestCountChange(parseInt(e.target.value))
+                      setFormData({ ...formData, guest_count: parseInt(e.target.value) || 0 })
                     }
                     required
                   />
@@ -347,16 +352,19 @@ const ContractCreate = () => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {pricingItems.map((item, index) => (
-                  <div key={`${item.field}-${index}`} className="space-y-2">
-                    <Label htmlFor={item.field}>{item.label}</Label>
+                  <div key={index} className="space-y-2">
+                    <Label htmlFor={`pricing-${index}`}>
+                      {item.label} {item.type === "percent" && "(비율)"}
+                    </Label>
                     <Input
-                      id={item.field}
+                      id={`pricing-${index}`}
                       type="number"
-                      value={getPriceValue(item.field)}
+                      step={item.type === "percent" ? "0.01" : "1"}
+                      value={item.value}
                       onChange={(e) =>
-                        handlePriceChange(item.field, parseInt(e.target.value))
+                        handlePricingItemChange(index, parseFloat(e.target.value))
                       }
-                      required
+                      placeholder={item.type === "percent" ? "0.1 = 10%" : "금액"}
                     />
                   </div>
                 ))}
