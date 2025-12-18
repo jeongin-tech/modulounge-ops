@@ -239,6 +239,7 @@ const ContractCreate = () => {
             created_by: user.id,
             terms_content: termsContent,
             refund_policy: refundPolicy,
+            pricing_items: JSON.parse(JSON.stringify(pricingItems)),
           },
         ])
         .select()

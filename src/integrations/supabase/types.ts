@@ -296,6 +296,7 @@ export type Database = {
           personal_id_number: string | null
           personal_phone: string | null
           phone_number: string | null
+          pricing_items: Json | null
           purpose: string | null
           receipt_email: string | null
           receipt_type: string | null
@@ -336,6 +337,7 @@ export type Database = {
           personal_id_number?: string | null
           personal_phone?: string | null
           phone_number?: string | null
+          pricing_items?: Json | null
           purpose?: string | null
           receipt_email?: string | null
           receipt_type?: string | null
@@ -376,6 +378,7 @@ export type Database = {
           personal_id_number?: string | null
           personal_phone?: string | null
           phone_number?: string | null
+          pricing_items?: Json | null
           purpose?: string | null
           receipt_email?: string | null
           receipt_type?: string | null
