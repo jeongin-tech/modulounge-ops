@@ -65,35 +65,48 @@ Deno.serve(async (req) => {
     const body = await req.json();
     console.log("Received webhook:", JSON.stringify(body, null, 2));
 
-    // 채널톡 웹훅 페이로드에서 메시지 추출
-    // 채널톡 웹훅 구조에 따라 조정 필요
-    const { chatId, message, entity } = body;
+    // 채널톡 웹훅 구조에 맞게 데이터 추출
+    // event: "push", type: "message", entity: 메시지 객체
+    const { event, type, entity, refers } = body;
 
-    // 다양한 웹훅 형식 지원
-    const summaryMessage = message || body.plainText || body.content || body.message?.plainText;
-    const chatIdValue = chatId || body.chat?.id || entity?.id || body.chatId || "unknown";
-    
-    // 발신자 이름 확인 (다양한 웹훅 구조 지원)
-    const senderName = body.sender?.name || 
-                       body.message?.sender?.name || 
-                       body.bot?.name ||
-                       body.entity?.name ||
-                       "";
+    // 메시지 이벤트가 아니면 스킵
+    if (type !== "message") {
+      console.log("Not a message event, skipping. Type:", type);
+      return new Response(
+        JSON.stringify({ success: true, message: "Not a message event, skipped" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    // 요약봇 메시지인지 확인 (발신자 이름 + 고객정보 포함 체크)
-    const isSummaryBot = senderName === "요약봇" || senderName.includes("요약");
-    const hasCustomerInfo = summaryMessage && summaryMessage.includes("고객정보:");
-    
-    // 요약봇 메시지가 아니거나 고객정보가 없으면 스킵
-    if (!isSummaryBot && !hasCustomerInfo) {
-      console.log("Not a summary bot message, skipping. Sender:", senderName);
+    // entity에서 메시지 정보 추출
+    const plainText = entity?.plainText || "";
+    const chatId = entity?.chatId || entity?.id || "unknown";
+    const personType = entity?.personType || ""; // "bot", "manager", "user"
+    const personId = entity?.personId || "";
+
+    // 매니저 정보 (refers에서)
+    const managerName = refers?.manager?.name || "";
+
+    console.log("Message details - personType:", personType, "managerName:", managerName);
+
+    // 요약봇 메시지인지 확인
+    // 1. personType이 "bot"이거나
+    // 2. 매니저 이름에 "요약"이 포함되거나
+    // 3. 메시지에 "고객정보:"가 포함된 경우
+    const isBotMessage = personType === "bot";
+    const isSummaryManager = managerName.includes("요약");
+    const hasCustomerInfo = plainText.includes("고객정보:");
+
+    // 요약봇 메시지가 아니면 스킵
+    if (!isBotMessage && !isSummaryManager && !hasCustomerInfo) {
+      console.log("Not a summary bot message, skipping. personType:", personType, "managerName:", managerName);
       return new Response(
         JSON.stringify({ success: true, message: "Not a summary bot message, skipped" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    if (!summaryMessage) {
+    if (!plainText) {
       console.log("No message content found in webhook");
       return new Response(
         JSON.stringify({ success: true, message: "No message to process" }),
@@ -101,16 +114,16 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log("Processing summary bot message from:", senderName);
+    console.log("Processing summary bot message. ChatId:", chatId);
 
     // 요약 메시지 파싱
-    const parsedData = parseSummaryMessage(summaryMessage);
+    const parsedData = parseSummaryMessage(plainText);
 
     // 데이터베이스에 저장
     const { data, error } = await supabase
       .from("channel_talk_summaries")
       .insert({
-        chat_id: chatIdValue,
+        chat_id: chatId,
         customer_info: parsedData.customerInfo,
         event_date: parsedData.eventDate,
         location: parsedData.location,
