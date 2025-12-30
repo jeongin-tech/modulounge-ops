@@ -70,13 +70,28 @@ Deno.serve(async (req) => {
     const { chatId, message, entity } = body;
 
     // 다양한 웹훅 형식 지원
-    let summaryMessage = message || body.plainText || body.content;
-    let chatIdValue = chatId || body.chat?.id || entity?.id || "unknown";
+    const summaryMessage = message || body.plainText || body.content || body.message?.plainText;
+    const chatIdValue = chatId || body.chat?.id || entity?.id || body.chatId || "unknown";
+    
+    // 발신자 이름 확인 (다양한 웹훅 구조 지원)
+    const senderName = body.sender?.name || 
+                       body.message?.sender?.name || 
+                       body.bot?.name ||
+                       body.entity?.name ||
+                       "";
 
-    // 봇 메시지인지 확인 (요약봇)
-    const isSummaryBot = body.sender?.name === "요약봇" || 
-                         body.personType === "bot" ||
-                         (summaryMessage && summaryMessage.includes("고객정보:"));
+    // 요약봇 메시지인지 확인 (발신자 이름 + 고객정보 포함 체크)
+    const isSummaryBot = senderName === "요약봇" || senderName.includes("요약");
+    const hasCustomerInfo = summaryMessage && summaryMessage.includes("고객정보:");
+    
+    // 요약봇 메시지가 아니거나 고객정보가 없으면 스킵
+    if (!isSummaryBot && !hasCustomerInfo) {
+      console.log("Not a summary bot message, skipping. Sender:", senderName);
+      return new Response(
+        JSON.stringify({ success: true, message: "Not a summary bot message, skipped" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (!summaryMessage) {
       console.log("No message content found in webhook");
@@ -85,6 +100,8 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    console.log("Processing summary bot message from:", senderName);
 
     // 요약 메시지 파싱
     const parsedData = parseSummaryMessage(summaryMessage);
