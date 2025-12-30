@@ -202,6 +202,60 @@ export type Database = {
           },
         ]
       }
+      channel_talk_summaries: {
+        Row: {
+          chat_id: string
+          coordination_feasibility: string | null
+          created_at: string
+          customer_info: string | null
+          customer_tendency: string | null
+          event_date: string | null
+          id: string
+          inquiry_content: string | null
+          keywords: string | null
+          location: string | null
+          raw_message: string | null
+          recommended_script: string | null
+          staff_handling: string | null
+          updated_at: string
+          upselling: string | null
+        }
+        Insert: {
+          chat_id: string
+          coordination_feasibility?: string | null
+          created_at?: string
+          customer_info?: string | null
+          customer_tendency?: string | null
+          event_date?: string | null
+          id?: string
+          inquiry_content?: string | null
+          keywords?: string | null
+          location?: string | null
+          raw_message?: string | null
+          recommended_script?: string | null
+          staff_handling?: string | null
+          updated_at?: string
+          upselling?: string | null
+        }
+        Update: {
+          chat_id?: string
+          coordination_feasibility?: string | null
+          created_at?: string
+          customer_info?: string | null
+          customer_tendency?: string | null
+          event_date?: string | null
+          id?: string
+          inquiry_content?: string | null
+          keywords?: string | null
+          location?: string | null
+          raw_message?: string | null
+          recommended_script?: string | null
+          staff_handling?: string | null
+          updated_at?: string
+          upselling?: string | null
+        }
+        Relationships: []
+      }
       contract_templates: {
         Row: {
           additional_price_per_person: number

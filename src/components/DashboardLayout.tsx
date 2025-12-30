@@ -23,6 +23,7 @@ import {
   User as UserIcon,
   ExternalLink,
   Bug,
+  MessageSquare,
 } from "lucide-react";
 
 // 원화 아이콘 컴포넌트
@@ -241,6 +242,12 @@ const DashboardLayout = ({ children, currentPage }: DashboardLayoutProps) => {
       icon: <WonSign className="h-5 w-5 flex items-center justify-center" />,
       label: "정산 관리",
       path: "/settlements/manage",
+      roles: ["STAFF"],
+    },
+    {
+      icon: <MessageSquare className="h-5 w-5" />,
+      label: "채널톡 상담요약",
+      path: "/channel-talk-summaries",
       roles: ["STAFF"],
     },
     {
