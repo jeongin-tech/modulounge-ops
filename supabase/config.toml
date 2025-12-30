@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.sync-order-to-channel-talk]
 verify_jwt = false
+
+[functions.channel-talk-summary-webhook]
+verify_jwt = false
