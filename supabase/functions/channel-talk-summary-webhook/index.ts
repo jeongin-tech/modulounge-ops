@@ -119,7 +119,14 @@ Deno.serve(async (req) => {
     // 매니저 정보 (refers에서)
     const managerName = refers?.manager?.name || "";
 
+    // 고객 정보 (refers.user에서 추출)
+    const user = refers?.user;
+    const customerName = user?.name || user?.profile?.name || "";
+    const customerPhone = user?.mobileNumber || user?.profile?.mobileNumber || "";
+    const customerEmail = user?.email || user?.profile?.email || "";
+
     console.log("Message details - personType:", personType, "managerName:", managerName);
+    console.log("Customer info from webhook - name:", customerName, "phone:", customerPhone);
 
     // 요약봇 메시지인지 확인
     // 1. personType이 "bot"이거나
@@ -151,14 +158,18 @@ Deno.serve(async (req) => {
     // 요약 메시지 파싱
     const parsedData = parseSummaryMessage(plainText);
 
+    // 웹훅에서 가져온 고객 정보 우선 사용 (파싱된 정보는 fallback)
+    const finalCustomerName = customerName || parsedData.customerName || "";
+    const finalCustomerPhone = customerPhone || parsedData.customerPhone || "";
+
     // 데이터베이스에 저장
     const { data, error } = await supabase
       .from("channel_talk_summaries")
       .insert({
         chat_id: chatId,
         customer_info: parsedData.customerInfo,
-        customer_name: parsedData.customerName,
-        customer_phone: parsedData.customerPhone,
+        customer_name: finalCustomerName,
+        customer_phone: finalCustomerPhone,
         event_date: parsedData.eventDate,
         location: parsedData.location,
         inquiry_content: parsedData.inquiryContent,
