@@ -294,38 +294,13 @@ const ChannelTalkSummaries = () => {
 
                     {expandedId === summary.id && (
                       <div className="border-t p-4 bg-muted/30 space-y-4">
-                        <div className="grid gap-3 text-sm">
-                          {summary.coordination_feasibility && (
-                            <div>
-                              <span className="font-medium">조율 및 가능성:</span>
-                              <p className="text-muted-foreground">{summary.coordination_feasibility}</p>
-                            </div>
-                          )}
-                          {summary.staff_handling && (
-                            <div>
-                              <span className="font-medium">상담원 처리 흐름:</span>
-                              <p className="text-muted-foreground">{summary.staff_handling}</p>
-                            </div>
-                          )}
-                          {summary.customer_tendency && (
-                            <div>
-                              <span className="font-medium">고객 성향:</span>
-                              <p className="text-muted-foreground">{summary.customer_tendency}</p>
-                            </div>
-                          )}
-                          {summary.upselling && (
-                            <div>
-                              <span className="font-medium">업세일링/추가 기회:</span>
-                              <p className="text-muted-foreground">{summary.upselling}</p>
-                            </div>
-                          )}
-                          {summary.recommended_script && (
-                            <div>
-                              <span className="font-medium">추천 스크립트:</span>
-                              <p className="text-muted-foreground">{summary.recommended_script}</p>
-                            </div>
-                          )}
-                        </div>
+                        {/* 요약봇 원문 */}
+                        {summary.raw_message && (
+                          <div className="bg-background border rounded-lg p-4">
+                            <span className="text-xs font-medium text-muted-foreground mb-2 block">요약봇 원문</span>
+                            <p className="text-sm whitespace-pre-wrap">{summary.raw_message}</p>
+                          </div>
+                        )}
 
                         <div className="flex justify-end gap-2 pt-2 border-t">
                           <Button
