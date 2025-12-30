@@ -8,6 +8,8 @@ const corsHeaders = {
 interface SummaryData {
   chatId: string;
   customerInfo?: string;
+  customerName?: string;
+  customerPhone?: string;
   eventDate?: string;
   location?: string;
   inquiryContent?: string;
@@ -39,6 +41,36 @@ function parseSummaryMessage(message: string): Partial<SummaryData> {
     { key: "recommendedScript", pattern: /추천 스크립트:\s*(.+?)(?=\n|$)/i },
     { key: "keywords", pattern: /키워드:\s*(.+?)(?=\n|$)/i },
   ];
+
+  // 고객 이름 파싱 (다양한 형식 지원)
+  const namePatterns = [
+    /고객명:\s*(.+?)(?=\n|$)/i,
+    /이름:\s*(.+?)(?=\n|$)/i,
+    /성함:\s*(.+?)(?=\n|$)/i,
+  ];
+  for (const pattern of namePatterns) {
+    const match = message.match(pattern);
+    if (match) {
+      result.customerName = match[1].trim();
+      break;
+    }
+  }
+
+  // 고객 연락처 파싱 (다양한 형식 지원)
+  const phonePatterns = [
+    /연락처:\s*(.+?)(?=\n|$)/i,
+    /전화번호:\s*(.+?)(?=\n|$)/i,
+    /휴대폰:\s*(.+?)(?=\n|$)/i,
+    /핸드폰:\s*(.+?)(?=\n|$)/i,
+    /(?:010[-\s]?\d{4}[-\s]?\d{4})/,
+  ];
+  for (const pattern of phonePatterns) {
+    const match = message.match(pattern);
+    if (match) {
+      result.customerPhone = match[1]?.trim() || match[0].trim();
+      break;
+    }
+  }
 
   for (const { key, pattern } of patterns) {
     const match = message.match(pattern);
@@ -125,6 +157,8 @@ Deno.serve(async (req) => {
       .insert({
         chat_id: chatId,
         customer_info: parsedData.customerInfo,
+        customer_name: parsedData.customerName,
+        customer_phone: parsedData.customerPhone,
         event_date: parsedData.eventDate,
         location: parsedData.location,
         inquiry_content: parsedData.inquiryContent,
