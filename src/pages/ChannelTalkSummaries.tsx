@@ -18,7 +18,8 @@ import {
   ChevronDown,
   ChevronUp,
   Copy,
-  ExternalLink
+  ExternalLink,
+  Phone
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -39,6 +40,8 @@ interface Summary {
   id: string;
   chat_id: string;
   customer_info: string | null;
+  customer_name: string | null;
+  customer_phone: string | null;
   event_date: string | null;
   location: string | null;
   inquiry_content: string | null;
@@ -125,6 +128,8 @@ const ChannelTalkSummaries = () => {
     const searchLower = searchTerm.toLowerCase();
     return (
       summary.customer_info?.toLowerCase().includes(searchLower) ||
+      summary.customer_name?.toLowerCase().includes(searchLower) ||
+      summary.customer_phone?.toLowerCase().includes(searchLower) ||
       summary.location?.toLowerCase().includes(searchLower) ||
       summary.keywords?.toLowerCase().includes(searchLower) ||
       summary.inquiry_content?.toLowerCase().includes(searchLower)
@@ -239,12 +244,23 @@ const ChannelTalkSummaries = () => {
                             )}
                           </div>
                           
-                          {summary.customer_info && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <User className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-medium">{summary.customer_info}</span>
-                            </div>
-                          )}
+                          {/* 고객 이름 & 연락처 */}
+                          <div className="flex items-center gap-4 flex-wrap">
+                            {(summary.customer_name || summary.customer_info) && (
+                              <div className="flex items-center gap-2 text-sm">
+                                <User className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-medium">
+                                  {summary.customer_name || summary.customer_info}
+                                </span>
+                              </div>
+                            )}
+                            {summary.customer_phone && (
+                              <div className="flex items-center gap-2 text-sm">
+                                <Phone className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-muted-foreground">{summary.customer_phone}</span>
+                              </div>
+                            )}
+                          </div>
                           
                           {summary.inquiry_content && (
                             <p className="text-sm text-muted-foreground line-clamp-2">

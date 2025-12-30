@@ -208,6 +208,8 @@ export type Database = {
           coordination_feasibility: string | null
           created_at: string
           customer_info: string | null
+          customer_name: string | null
+          customer_phone: string | null
           customer_tendency: string | null
           event_date: string | null
           id: string
@@ -225,6 +227,8 @@ export type Database = {
           coordination_feasibility?: string | null
           created_at?: string
           customer_info?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           customer_tendency?: string | null
           event_date?: string | null
           id?: string
@@ -242,6 +246,8 @@ export type Database = {
           coordination_feasibility?: string | null
           created_at?: string
           customer_info?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           customer_tendency?: string | null
           event_date?: string | null
           id?: string
